@@ -1,0 +1,32 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "20"
+  VITE_SUPABASE_URL = "https://bixjrkdqxurgsjkvgkwq.supabase.co"
+  VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpeGpya2RxeHVyZ3Nqa3Zna3dxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQyOTA1MTUsImV4cCI6MjEwOTg2NjUxNX0.9UEdprGwvAmCFXKmx6LzSxpgNtNa_qFXGVvyGmSegkI"
+  VITE_MARKET_DATA_PROVIDER = "polygon"
+  VITE_ENABLE_LIVE_TRADING = "false"
+
+# SPA client-side routing fallback
+[[redirects]]
+  from = "/api/market-data"
+  to = "/.netlify/functions/market-data"
+  status = 200
+
+[[redirects]]
+  from = "/api/webhook/tradingview"
+  to = "/.netlify/functions/tradingview-webhook"
+  status = 200
+
+[[redirects]]
+  from = "/api/mcp/robinhood"
+  to = "/.netlify/functions/robinhood-mcp-adapter"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

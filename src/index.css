@@ -1,0 +1,250 @@
+@import "tailwindcss";
+
+@layer base {
+  :root,
+  html.dark {
+    --tp-bg: #0A101D;
+    --tp-bg-subtle: #0F172A;
+    --tp-card: #131E32;
+    --tp-card-hover: #192742;
+    --tp-border: #243552;
+    --tp-accent: #10B981;
+    --tp-accent-bright: #26D6A0;
+    --tp-text: #F8FAFC;
+    --tp-muted: #B8CAE0;
+    --tp-positive: #22C55E;
+    --tp-negative: #EF4444;
+    --tp-warning: #F59E0B;
+    --tp-shadow: 0 4px 20px -2px rgba(2, 6, 23, 0.45);
+    color-scheme: dark;
+  }
+
+  html.light {
+    --tp-bg: #F1F5F9;
+    --tp-bg-subtle: #E2E8F0;
+    --tp-card: #FFFFFF;
+    --tp-card-hover: #F8FAFC;
+    --tp-border: #CBD5E1;
+    --tp-accent: #059669;
+    --tp-accent-bright: #0D9488;
+    --tp-text: #0F172A;
+    --tp-muted: #475569;
+    --tp-positive: #15803D;
+    --tp-negative: #DC2626;
+    --tp-warning: #B45309;
+    --tp-shadow: 0 2px 10px -2px rgba(15, 23, 42, 0.07), 0 1px 3px -1px rgba(15, 23, 42, 0.05);
+    color-scheme: light;
+  }
+
+  html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Text Scale Modes: Medium (default for better reading), Large, Compact */
+  html.scale-compact {
+    font-size: 14.5px;
+  }
+  html.scale-medium {
+    font-size: 16px;
+  }
+  html.scale-large {
+    font-size: 17.5px;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--tp-bg);
+    color: var(--tp-text);
+    line-height: 1.55;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .font-mono {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-feature-settings: "tnum" on, "lnum" on;
+  }
+}
+
+/* ============================================================================
+   MEDIUM READABLE TYPOGRAPHY UPGRADE
+   Eliminates microscopic 10px/11px text across all modules for easy reading
+   ============================================================================ */
+.text-\[10px\] {
+  font-size: 0.8125rem !important; /* 13px */
+  line-height: 1.45 !important;
+  letter-spacing: 0.01em;
+}
+
+.text-\[11px\] {
+  font-size: 0.875rem !important; /* 14px */
+  line-height: 1.5 !important;
+}
+
+.text-xs {
+  font-size: 0.925rem !important; /* ~14.8px */
+  line-height: 1.55 !important;
+}
+
+.text-sm {
+  font-size: 1.025rem !important; /* ~16.4px */
+  line-height: 1.55 !important;
+}
+
+/* ============================================================================
+   DARK THEME ENHANCEMENTS (Better Contrast, Depth & Readable Muted Text)
+   ============================================================================ */
+html:not(.light) .bg-\[\#0B1220\] {
+  background-color: #0A101D !important;
+}
+
+html:not(.light) .bg-\[\#111C2E\] {
+  background-color: #131E32 !important;
+  box-shadow: var(--tp-shadow);
+}
+
+html:not(.light) .border-\[\#1E2D45\] {
+  border-color: #243552 !important;
+}
+
+html:not(.light) .text-\[\#9BAFC4\] {
+  color: #B8CAE0 !important;
+}
+
+/* ============================================================================
+   LIGHT THEME ENGINE (Crisp Daylight Mode for Every Page, Card, Table & Input)
+   ============================================================================ */
+html.light .bg-\[\#0B1220\],
+html.light .bg-\[\#0B1220\]\/95,
+html.light .bg-\[\#0B1220\]\/80,
+html.light .bg-\[\#0B1220\]\/60 {
+  background-color: #F1F5F9 !important;
+}
+
+/* Nested sub-boxes inside white cards get a soft recessed tint in Light Mode */
+html.light .bg-\[\#111C2E\] .bg-\[\#0B1220\] {
+  background-color: #F8FAFC !important;
+}
+
+html.light .bg-\[\#111C2E\],
+html.light .bg-\[\#111C2E\]\/60,
+html.light .bg-\[\#111C2E\]\/40 {
+  background-color: #FFFFFF !important;
+  box-shadow: var(--tp-shadow);
+}
+
+html.light .bg-\[\#16243B\],
+html.light .hover\:bg-\[\#111C2E\]:hover,
+html.light .hover\:bg-\[\#16243B\]:hover {
+  background-color: #E2E8F0 !important;
+}
+
+html.light .bg-\[\#1E2D45\] {
+  background-color: #E2E8F0 !important;
+}
+
+html.light .border-\[\#1E2D45\],
+html.light .border-\[\#1E2D45\]\/70,
+html.light .border-\[\#1E2D45\]\/60,
+html.light .border-\[\#1E2D45\]\/50 {
+  border-color: #CBD5E1 !important;
+}
+
+/* Primary text in Light Mode turns deep slate-navy, except on solid danger/success badges */
+html.light .text-white {
+  color: #0F172A !important;
+}
+
+html.light .bg-\[\#EF4444\] .text-white,
+html.light .bg-\[\#EF4444\].text-white,
+html.light .hover\:bg-\[\#EF4444\]:hover.hover\:text-white,
+html.light .bg-\[\#22C55E\] .text-white,
+html.light .bg-\[\#22C55E\].text-white {
+  color: #FFFFFF !important;
+}
+
+/* Secondary muted text in Light Mode turns crisp slate-600/700 */
+html.light .text-\[\#9BAFC4\],
+html.light .text-\[\#9BAFC4\]\/70 {
+  color: #475569 !important;
+}
+
+html.light .hover\:text-white:hover {
+  color: #0F172A !important;
+}
+
+/* Brand Emerald-Teal Accent in Light Mode: High-Contrast #059669 / #0D9488 */
+html.light .text-\[\#26D6A0\] {
+  color: #059669 !important;
+}
+
+html.light .bg-\[\#26D6A0\] {
+  background-color: #059669 !important;
+  color: #FFFFFF !important;
+}
+
+html.light .bg-\[\#26D6A0\].text-\[\#0B1220\] {
+  color: #FFFFFF !important;
+}
+
+html.light .bg-\[\#26D6A0\]\/15,
+html.light .bg-\[\#26D6A0\]\/20,
+html.light .bg-\[\#26D6A0\]\/10 {
+  background-color: rgba(5, 150, 105, 0.12) !important;
+}
+
+html.light .border-\[\#26D6A0\]\/30,
+html.light .border-\[\#26D6A0\]\/35,
+html.light .border-\[\#26D6A0\]\/40,
+html.light .border-\[\#26D6A0\]\/50 {
+  border-color: rgba(5, 150, 105, 0.4) !important;
+}
+
+/* Semantic Status Colors in Light Mode for Maximum Readability on White */
+html.light .text-\[\#22C55E\] {
+  color: #15803D !important;
+}
+
+html.light .text-\[\#EF4444\] {
+  color: #DC2626 !important;
+}
+
+html.light .text-\[\#F59E0B\] {
+  color: #B45309 !important;
+}
+
+html.light select option {
+  background-color: var(--tp-card);
+  color: var(--tp-text);
+}
+
+/* Recharts Tooltip & Grid Adaptation in Light Mode */
+html.light .recharts-cartesian-grid-horizontal line,
+html.light .recharts-cartesian-grid-vertical line {
+  stroke: #E2E8F0 !important;
+}
+
+html.light .recharts-text {
+  fill: #475569 !important;
+  font-size: 12px !important;
+}
+
+/* Custom financial terminal scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--tp-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--tp-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--tp-accent);
+}

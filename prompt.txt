@@ -1,0 +1,823 @@
+# PROJECT: TradePilot – Intelligent Options Trading Command Center
+
+## 1. Project Overview
+
+Build a professional, modern, responsive web application named **TradePilot**.
+
+Tagline: "Trade Smarter. Measure Everything."
+
+TradePilot is a personal options trading platform focused initially on SPX 0DTE (Zero Days to Expiration) options trading.
+
+The application must combine:
+
+1. Options strategy analysis and strategy builder.
+2. Paper trading and simulation.
+3. Robinhood MCP broker integration.
+4. Market data and options chain monitoring.
+5. Automated entry and exit rule management.
+6. TradingView signal integration.
+7. Robinhood trading history synchronization.
+8. Automated trading journal.
+9. Performance analytics and strategy comparison.
+10. Risk management and trading configuration.
+
+Build the application so it can initially run using free-tier services and paper trading without submitting real broker orders.
+
+The architecture must allow future expansion into live trading and additional brokers.
+
+IMPORTANT:
+Do not build only a static dashboard or a collection of mockups. Build functional modules, reusable components, database integration, actual CRUD operations, validation, error handling and a working paper trading engine.
+
+Never fabricate live market prices, broker connectivity, option quotes, execution confirmations or trading history.
+
+If an external service is not configured, clearly display DEMO, SIMULATED or NOT CONNECTED status.
+
+---
+
+## 2. Technology Stack
+
+Use:
+
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+- shadcn/ui
+- Lucide icons
+- Supabase PostgreSQL
+- Supabase Authentication
+- Supabase Realtime where appropriate
+- Supabase Edge Functions
+- Netlify hosting
+- Netlify Functions where appropriate
+- Robinhood MCP integration through a secure backend adapter
+- TradingView webhook integration
+- Recharts for analytics
+
+Use modular architecture and clean separation of concerns.
+
+Frontend must never directly access broker credentials or execute privileged broker operations.
+
+All sensitive operations must run on a trusted backend.
+
+---
+
+## 3. Branding and Design
+
+Application name: TradePilot.
+
+Create a professional financial trading terminal design.
+
+Design requirements:
+
+- Dark navy background.
+- Modern green accent color.
+- Clean financial dashboard.
+- Professional typography.
+- Compact but readable data tables.
+- Responsive layout.
+- Sidebar navigation.
+- Top navigation with market status.
+- Light/dark theme support.
+- Consistent cards, dialogs and charts.
+- Desktop-first but mobile responsive.
+
+Suggested colors:
+
+- Background: #0B1220
+- Card: #111C2E
+- Accent: #26D6A0
+- Primary text: #FFFFFF
+- Secondary text: #9BAFC4
+- Positive: #22C55E
+- Negative: #EF4444
+- Warning: #F59E0B
+
+Create a professional TradePilot logo using a chart/arrow concept.
+
+---
+
+## 4. Main Navigation
+
+Create these sidebar sections:
+
+1. Dashboard
+2. Strategy Lab
+3. Options Chain
+4. Paper Trading
+5. Live Trading
+6. Automation Center
+7. Trading Signals
+8. Trading Journal
+9. Analytics
+10. Backtesting
+11. Broker Connections
+12. Settings
+
+Each section must have its own page and functional interface.
+
+---
+
+## 5. Dashboard
+
+Create an SPX-focused trading dashboard.
+
+Display:
+
+- SPX index price.
+- Daily percentage change.
+- VIX.
+- Market status.
+- Market open/close countdown.
+- Current ATM strike.
+- Nearby ITM and OTM strikes.
+- Available option quotes when connected.
+- Current open positions.
+- Today's realized P&L.
+- Today's unrealized P&L.
+- Paper account balance.
+- Win rate.
+- Active strategies.
+- Pending entry signals.
+- Pending exit signals.
+- Daily risk utilization.
+
+Create charts:
+
+- SPX intraday chart.
+- Paper account equity curve.
+- Daily P&L chart.
+- Strategy performance chart.
+- Win/loss distribution.
+
+Include market status:
+PRE-MARKET, OPEN, CLOSED, AFTER-HOURS.
+
+Do not display fake live market data.
+
+---
+
+## 6. Strategy Lab
+
+Build a configurable options strategy builder.
+
+Supported initial strategies:
+
+### Directional strategies
+- ATM Long Call
+- ITM Long Call
+- OTM Long Call
+- ATM Long Put
+- ITM Long Put
+- OTM Long Put
+
+### Volatility strategies
+- ATM Long Straddle
+- OTM Long Strangle
+
+### Debit spreads
+- Bull Call Debit Spread
+- Bear Put Debit Spread
+
+### Credit spreads
+- Bull Put Credit Spread
+- Bear Call Credit Spread
+
+### Multi-leg strategies
+- Iron Condor
+- Iron Butterfly
+
+For each strategy provide:
+
+- Strategy description.
+- Market outlook.
+- Strike selection.
+- Expiration selection.
+- Number of contracts.
+- Individual option legs.
+- Entry premium.
+- Maximum loss.
+- Maximum profit.
+- Breakeven price.
+- Risk/reward ratio.
+- Profit and loss payoff chart.
+- Greeks where available.
+- Estimated fees.
+- Estimated slippage.
+
+For multi-leg strategies calculate risk and payoff using all legs together.
+
+Do not assume that every strategy is suitable for every market condition.
+
+For credit strategies, require defined-risk structures and explicit buying-power validation.
+
+---
+
+## 7. Options Chain
+
+Create an interactive SPX options chain.
+
+Display:
+
+- Expiration date.
+- Strike price.
+- Calls.
+- Puts.
+- Bid.
+- Ask.
+- Midpoint.
+- Last price.
+- Volume.
+- Open interest.
+- Implied volatility.
+- Delta.
+- Gamma.
+- Theta.
+- Vega.
+
+Allow:
+
+- ATM selection.
+- ITM selection.
+- OTM selection.
+- Strike filtering.
+- Call/put filtering.
+- Contract selection.
+- Multi-leg selection.
+- Add selected contracts to Strategy Lab.
+
+Highlight the ATM strike.
+
+Use actual provider data when available. Display data source and timestamp.
+
+Do not substitute SPX index prices for SPX option contract prices.
+
+---
+
+## 8. Paper Trading Engine
+
+This is a priority module.
+
+Build a fully functional paper trading engine.
+
+Paper trading must not submit orders to Robinhood.
+
+Features:
+
+- Create paper account.
+- Initial virtual capital configurable.
+- Create paper orders.
+- Simulated market orders.
+- Simulated limit orders.
+- Simulated multi-leg orders.
+- Partial fill simulation where applicable.
+- Bid/ask-based fill models.
+- Midpoint fill model.
+- Slippage simulation.
+- Configurable commission and fees.
+- Position tracking.
+- Average entry premium.
+- Realized P&L.
+- Unrealized P&L.
+- Open and closed trades.
+- Order status tracking.
+- Trade history.
+
+Use SPX options multiplier of 100 for standard contracts, with contract-specific validation.
+
+Paper fills must use a configured execution model and must be clearly marked as simulated.
+
+If no reliable quote exists, do not create a falsely precise execution.
+
+Support multiple paper accounts and strategies.
+
+---
+
+## 9. Entry Configuration
+
+Allow users to select:
+
+- Market open entry.
+- Market entry after configured time.
+- Limit price entry.
+- VWAP breakout.
+- EMA crossover.
+- Opening range breakout.
+- RSI confirmation.
+- TradingView webhook.
+- Manual entry.
+
+Configurable market times:
+
+- Market open: 9:30 AM ET.
+- Default entry evaluation: 9:35 AM ET.
+- Entry cutoff: configurable.
+- Timezone: America/New_York.
+
+Allow configurable strike selection:
+
+- ATM.
+- One strike ITM.
+- Two strikes ITM.
+- One strike OTM.
+- Two strikes OTM.
+- Delta-based selection.
+
+For SPX, strike selection must use the actual available option chain and contract specifications.
+
+---
+
+## 10. Exit and Automation Rules
+
+Create a powerful but easy-to-use exit rule manager.
+
+Supported exits:
+
+- Fixed profit target.
+- Fixed stop loss.
+- Trailing stop.
+- Break-even stop.
+- Time-based exit.
+- 30-minute review.
+- End-of-day exit.
+- TradingView reversal signal.
+- Manual exit.
+
+Allow percentage configuration.
+
+Example defaults for PAPER trading:
+
+- Profit target: +30%.
+- Stop loss: -20%.
+- Monitoring interval: 30 minutes.
+- Force-close cutoff: 3:45 PM ET.
+
+All values must be configurable.
+
+Important:
+
+A monitoring interval is not automatically an exit instruction. Provide separate actions for HOLD, REVIEW, PARTIAL CLOSE and FULL CLOSE.
+
+Calculate percentage return based on actual simulated or confirmed execution cost.
+
+For multi-leg positions calculate exits using combined position economics.
+
+Do not promise guaranteed stop prices or guaranteed fills.
+
+---
+
+## 11. Risk Management
+
+Create a global risk settings page.
+
+Include:
+
+- Maximum daily loss.
+- Maximum risk per trade.
+- Maximum trades per day.
+- Maximum simultaneous positions.
+- Maximum contracts.
+- Maximum portfolio exposure.
+- Maximum bid/ask spread.
+- Maximum slippage.
+- Minimum liquidity.
+- Minimum volume.
+- Minimum open interest.
+- Entry cutoff.
+- Maximum holding duration.
+- Re-entry restrictions.
+
+Create an emergency kill switch.
+
+Kill switch must:
+
+1. Disable new entries.
+2. Cancel eligible pending orders.
+3. Display existing positions.
+4. Allow separately authorized position-closing actions.
+5. Record every action in audit logs.
+
+Do not claim that a position is closed until the broker confirms execution.
+
+Include a stale-data protection mechanism.
+
+If quotes are stale or unavailable, block new automated entries.
+
+---
+
+## 12. TradingView Integration
+
+Create a TradingView signal management module.
+
+Allow users to configure webhook endpoints.
+
+Supported signal types:
+
+- BUY_CALL
+- BUY_PUT
+- BUY_STRADDLE
+- BUY_STRANGLE
+- EXIT_POSITION
+- CLOSE_ALL
+- VWAP_BULLISH
+- VWAP_BEARISH
+- EMA_BULLISH
+- EMA_BEARISH
+
+Webhook requirements:
+
+- Authenticated requests.
+- Secret validation.
+- Timestamp validation.
+- Duplicate-event prevention.
+- Signal logging.
+- Payload validation.
+- Strategy mapping.
+- Risk validation.
+- Paper/live mode validation.
+
+A TradingView signal must never directly bypass TradePilot risk controls.
+
+Provide sample Pine Script alert JSON separately as a configuration example.
+
+---
+
+## 13. Robinhood MCP Integration
+
+Create a backend broker adapter.
+
+Do not assume that Robinhood MCP provides all necessary tools.
+
+First discover the actual MCP server tools and their schemas.
+
+Create capability detection for:
+
+- Account information.
+- Buying power.
+- Positions.
+- Options chains.
+- Option quotes.
+- Historical orders.
+- Order submission.
+- Order cancellation.
+- Position closing.
+- Trade history.
+
+Show individual connection statuses.
+
+Example:
+
+Robinhood MCP:
+- Server connection.
+- Authentication.
+- Account read access.
+- Position read access.
+- Order read access.
+- Historical transaction access.
+- Options quote access.
+- Order submission capability.
+
+Implement secure authentication according to the selected MCP server's supported mechanism.
+
+Never store credentials in frontend code, browser storage or client-readable tables.
+
+Do not fabricate successful broker connections.
+
+If the selected MCP server is unavailable, keep the broker integration interface functional in disconnected mode.
+
+### Trading permissions
+
+Provide three modes:
+
+1. Read-only.
+2. Paper trading.
+3. Live trading.
+
+Live trading must remain disabled by default.
+
+Before enabling live trading require explicit user authorization.
+
+For the initial release, live trading must not submit actual orders.
+
+Create the adapter architecture for future implementation without pretending that it is operational.
+
+---
+
+## 14. Trading Journal
+
+Build an automatic trading journal.
+
+Import Robinhood history when supported.
+
+Also support CSV import.
+
+Support:
+
+- Stocks.
+- Calls.
+- Puts.
+- Multi-leg options.
+- Buy transactions.
+- Sell transactions.
+- Partial fills.
+- Fees.
+- Order identifiers.
+- Execution identifiers.
+
+Reconstruct positions from individual executions.
+
+Do not treat an order as an execution.
+
+Do not count every leg of a multi-leg trade as an independent strategy trade when measuring strategy-level win rate.
+
+Journal fields:
+
+- Trade date.
+- Symbol.
+- Option type.
+- Strike.
+- Expiration.
+- Contracts.
+- Entry price.
+- Exit price.
+- Entry time.
+- Exit time.
+- Fees.
+- Realized P&L.
+- Strategy.
+- Trading mode.
+- Entry reason.
+- Exit reason.
+- Notes.
+
+Create daily, weekly and monthly journal views.
+
+---
+
+## 15. Analytics
+
+Create performance dashboards.
+
+Calculate:
+
+- Total P&L.
+- Realized P&L.
+- Unrealized P&L.
+- Win rate.
+- Loss rate.
+- Profit factor.
+- Average winner.
+- Average loser.
+- Average return.
+- Maximum drawdown.
+- Consecutive wins.
+- Consecutive losses.
+- Average holding time.
+- Total fees.
+- Slippage impact.
+
+Provide filters:
+
+- Date range.
+- Strategy.
+- Symbol.
+- Options type.
+- ATM/ITM/OTM.
+- Paper/live.
+- Entry time.
+- Exit type.
+
+Create strategy comparison reports.
+
+Never label incomplete or unverified trade history as complete.
+
+---
+
+## 16. Backtesting
+
+Build a configurable backtesting module.
+
+Allow the user to select:
+
+- SPX strategy.
+- Date range.
+- Entry time.
+- Exit time.
+- ATM/ITM/OTM.
+- Profit target.
+- Stop loss.
+- Monitoring interval.
+- Maximum contracts.
+- Entry conditions.
+- Exit conditions.
+- Fees.
+- Slippage.
+
+Support historical option contract prices, not just SPX index movement.
+
+Do not manufacture historical option prices.
+
+If historical options data is unavailable, clearly explain the limitation and disable the corresponding verified backtest.
+
+Show:
+
+- Total trades.
+- Win rate.
+- Average P&L.
+- Net P&L.
+- Maximum drawdown.
+- Profit factor.
+- Equity curve.
+- Best/worst trading days.
+- Strategy comparison.
+
+Clearly distinguish actual historical backtests, approximate models and simulated results.
+
+---
+
+## 17. Supabase Database
+
+Create migrations and tables for:
+
+- profiles
+- broker_connections
+- broker_accounts
+- market_snapshots
+- option_contracts
+- strategies
+- strategy_configs
+- trading_signals
+- trade_sessions
+- trades
+- trade_legs
+- orders
+- executions
+- paper_accounts
+- paper_positions
+- risk_rules
+- journal_entries
+- performance_snapshots
+- automation_events
+- audit_logs
+
+Requirements:
+
+- Proper UUID primary keys.
+- Foreign key relationships.
+- Created/updated timestamps.
+- Appropriate indexes.
+- User ownership.
+- Row Level Security.
+- Secure backend-only access to sensitive records.
+
+Never expose Supabase service role credentials to the frontend.
+
+Generate SQL migrations and document the schema.
+
+---
+
+## 18. Backend and Scheduling
+
+Separate the application into:
+
+- Frontend.
+- Supabase database.
+- Market data adapter.
+- Broker adapter.
+- Strategy engine.
+- Paper trading engine.
+- Risk engine.
+- Automation worker.
+- Journal synchronization service.
+
+Use scheduled jobs or a dedicated persistent worker for reliable trading automation.
+
+Do not assume that a serverless function runs continuously.
+
+Every automated task must be idempotent.
+
+Use execution locks to prevent duplicate orders.
+
+Log every entry, exit, cancellation, rejection and failure.
+
+---
+
+## 19. Settings
+
+Create centralized settings.
+
+Categories:
+
+1. General.
+2. Market data.
+3. Robinhood MCP.
+4. TradingView.
+5. Paper account.
+6. Live trading permissions.
+7. Strategy defaults.
+8. Entry rules.
+9. Exit rules.
+10. Risk management.
+11. Fees and slippage.
+12. Notifications.
+13. Timezone.
+
+Default timezone: America/Los_Angeles for display, with market calculations using America/New_York.
+
+Make all strategy settings independently configurable.
+
+---
+
+## 20. Notifications
+
+Support:
+
+- Entry signal.
+- Paper trade opened.
+- Profit target reached.
+- Stop loss reached.
+- Exit signal.
+- Daily loss limit reached.
+- Broker connection lost.
+- Market data stale.
+- Order rejected.
+- Daily journal completed.
+
+Create an in-app notification center.
+
+---
+
+## 21. Development Requirements
+
+Build in phases.
+
+Phase 1:
+- Branding.
+- Authentication.
+- Dashboard.
+- Navigation.
+- Supabase schema.
+- Manual trade journal.
+- CSV import.
+
+Phase 2:
+- Strategy Lab.
+- Options chain interface.
+- Paper trading engine.
+- Risk controls.
+- Analytics.
+
+Phase 3:
+- Real market data provider.
+- TradingView integration.
+- Historical options data.
+- Backtesting.
+
+Phase 4:
+- Robinhood MCP integration.
+- Read-only synchronization.
+- Historical account import.
+
+Phase 5:
+- Advanced automation.
+- Live trading authorization.
+- Broker order management.
+
+Do not generate all screens as static placeholders.
+
+Prioritize a working Phase 1 and Phase 2.
+
+---
+
+## 22. Initial Delivery
+
+Start by creating:
+
+1. Complete project structure.
+2. Professional TradePilot dashboard.
+3. Sidebar navigation.
+4. Supabase connection.
+5. Authentication.
+6. SQL database migrations.
+7. Strategy configuration module.
+8. Working paper trading engine.
+9. CSV trade importer.
+10. Trading journal.
+11. Performance analytics.
+12. Environment variable example file.
+13. Netlify deployment configuration.
+14. README with installation instructions.
+
+Create reusable components.
+
+Use clean TypeScript interfaces.
+
+Include loading states, empty states, errors and validation.
+
+Make the application easy to maintain and extend.
+
+Do not ask me to manually create mockup data to make screens appear functional.
+
+Create realistic demo data only when explicitly marked DEMO.
+
+The finished result must be a working, deployable TradePilot MVP, not just a design prototype.
