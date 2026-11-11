@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Columns,
   ExternalLink,
+  Maximize,
   Maximize2,
   Minimize2,
   Sliders,
@@ -123,7 +124,7 @@ const SingleTvWidget: React.FC<{
   showBB: boolean;
   showMACD: boolean;
   showVWAP: boolean;
-  height: number;
+  height: string | number;
 }> = ({ tvSymbol, interval, theme, showBB, showMACD, showVWAP, height }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -139,7 +140,7 @@ const SingleTvWidget: React.FC<{
 
     const widgetContainer = document.createElement('div');
     widgetContainer.className = 'tradingview-widget-container__widget';
-    widgetContainer.style.height = `${height}px`;
+    widgetContainer.style.height = typeof height === 'number' ? `${height}px` : height;
     widgetContainer.style.width = '100%';
     el.appendChild(widgetContainer);
 
@@ -177,7 +178,7 @@ const SingleTvWidget: React.FC<{
     <div
       ref={containerRef}
       className="tradingview-widget-container w-full overflow-hidden rounded-xl border border-[#1E2D45]"
-      style={{ height: `${height}px` }}
+      style={{ height: typeof height === 'number' ? `${height}px` : height }}
     />
   );
 };
@@ -193,8 +194,44 @@ export const TradingViewChart: React.FC = () => {
   const [showBB, setShowBB] = useState<boolean>(true);
   const [showMACD, setShowMACD] = useState<boolean>(true);
   const [showVWAP, setShowVWAP] = useState<boolean>(false);
-  const [expanded, setExpanded] = useState<boolean>(false);
   const [customInput, setCustomInput] = useState<string>('');
+
+  // 3-way height mode: NORMAL (380px) -> HALF_EXPANDED (560px) -> FULLSCREEN (fixed overlay or 820px)
+  const [chartViewMode, setChartViewMode] = useState<'NORMAL' | 'HALF' | 'FULL'>('HALF');
+
+  // Next Symbol quick cycling (Hotkey 'n' support)
+  const cycleNextSymbol = () => {
+    const currentIndex = SYMBOL_PRESETS.findIndex((p) => p.symbol === activeSymbol);
+    const nextIndex = (currentIndex + 1) % SYMBOL_PRESETS.length;
+    selectTradingSymbol(SYMBOL_PRESETS[nextIndex].symbol);
+  };
+
+  // Keyboard shortcut listener: Press 'n' to cycle next symbol
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if typing in an input or textarea
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        cycleNextSymbol();
+      } else if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        setChartViewMode((prev) => (prev === 'FULL' ? 'HALF' : 'FULL'));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeSymbol]);
 
   const currentPreset = SYMBOL_PRESETS.find((p) => p.symbol === activeSymbol);
   const tvSymbol = currentPreset
@@ -203,7 +240,7 @@ export const TradingViewChart: React.FC = () => {
       ? activeSymbol
       : `NASDAQ:${activeSymbol}`;
 
-  const chartHeight = expanded ? 620 : 440;
+  const chartHeight = chartViewMode === 'FULL' ? 'calc(100vh - 140px)' : chartViewMode === 'HALF' ? 560 : 380;
 
   const handleCustomSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -220,13 +257,31 @@ export const TradingViewChart: React.FC = () => {
   };
 
   return (
-    <div className="rounded-2xl border border-[#1E2D45] bg-[#111C2E] p-4 space-y-3">
-      {/* Row 1: Quick Symbol Pills (SPX, SPY, QQQ, NVDA, AAPL, TSLA, MSFT, META, AMD, AMZN, IWM, COIN) */}
+    <div
+      className={`rounded-2xl border border-[#1E2D45] bg-[#111C2E] p-4 space-y-3 transition-all ${
+        chartViewMode === 'FULL'
+          ? 'fixed inset-3 z-50 overflow-y-auto shadow-2xl bg-[#0B1220]'
+          : ''
+      }`}
+    >
+      {/* Row 1: Symbol Switcher + Hotkey 'N' Badge + Full/Half Toggle */}
       <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-[#1E2D45] pb-3">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-[#9BAFC4] mr-1">
-            Symbol:
-          </span>
+          <div className="flex items-center gap-1.5 mr-1">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-[#9BAFC4]">
+              Symbol:
+            </span>
+            {/* Quick Cycle Button [N] */}
+            <button
+              type="button"
+              onClick={cycleNextSymbol}
+              className="flex items-center gap-1 rounded-lg border border-[#26D6A0]/50 bg-[#26D6A0]/15 px-2 py-1 font-mono text-[11px] font-bold text-[#26D6A0] hover:bg-[#26D6A0] hover:text-[#0B1220] transition"
+              title="Next Symbol (Press 'N' on keyboard)"
+            >
+              <span>Next [N]</span>
+            </button>
+          </div>
+
           {SYMBOL_PRESETS.map((item) => {
             const isActive = activeSymbol === item.symbol;
             return (
@@ -258,29 +313,66 @@ export const TradingViewChart: React.FC = () => {
           </form>
         </div>
 
-        {/* Open in TradingView External Button */}
+        {/* View Height Controls: Compact / Half / Fullscreen */}
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={openExternalTradingView}
-            className="flex items-center gap-1.5 rounded-xl bg-[#26D6A0]/15 border border-[#26D6A0]/40 px-3 py-1.5 text-xs font-bold text-[#26D6A0] hover:bg-[#26D6A0] hover:text-[#0B1220] transition"
-            title="Open Full Interactive Chart in TradingView Tab"
-          >
-            <ExternalLink className="h-3.5 w-3.5" />
-            <span>Open {activeSymbol} in TradingView</span>
-          </button>
+          {/* Half / Fullscreen Toggle Segment */}
+          <div className="flex items-center rounded-xl border border-[#1E2D45] bg-[#0B1220] p-1">
+            <button
+              type="button"
+              onClick={() => setChartViewMode('NORMAL')}
+              className={`rounded-lg px-2.5 py-1 text-xs font-bold transition ${
+                chartViewMode === 'NORMAL'
+                  ? 'bg-[#26D6A0] text-[#0B1220]'
+                  : 'text-[#9BAFC4] hover:text-white'
+              }`}
+              title="Standard Compact Height (380px)"
+            >
+              Compact
+            </button>
+            <button
+              type="button"
+              onClick={() => setChartViewMode('HALF')}
+              className={`rounded-lg px-2.5 py-1 text-xs font-bold transition ${
+                chartViewMode === 'HALF'
+                  ? 'bg-[#26D6A0] text-[#0B1220]'
+                  : 'text-[#9BAFC4] hover:text-white'
+              }`}
+              title="Half-Page View (560px)"
+            >
+              Half
+            </button>
+            <button
+              type="button"
+              onClick={() => setChartViewMode(chartViewMode === 'FULL' ? 'HALF' : 'FULL')}
+              className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold transition ${
+                chartViewMode === 'FULL'
+                  ? 'bg-[#26D6A0] text-[#0B1220]'
+                  : 'text-[#9BAFC4] hover:text-white'
+              }`}
+              title="Fullscreen Chart (Press 'F' or click)"
+            >
+              {chartViewMode === 'FULL' ? (
+                <>
+                  <Minimize2 className="h-3.5 w-3.5" />
+                  <span>Exit Full</span>
+                </>
+              ) : (
+                <>
+                  <Maximize className="h-3.5 w-3.5" />
+                  <span>Fullscreen</span>
+                </>
+              )}
+            </button>
+          </div>
 
           <button
             type="button"
-            onClick={() => setExpanded(!expanded)}
-            className="flex items-center justify-center rounded-xl border border-[#1E2D45] bg-[#0B1220] p-2 text-[#9BAFC4] hover:text-white"
-            title={expanded ? 'Compact Chart Height' : 'Expand Chart Height'}
+            onClick={openExternalTradingView}
+            className="hidden sm:flex items-center gap-1.5 rounded-xl bg-[#26D6A0]/15 border border-[#26D6A0]/40 px-3 py-1.5 text-xs font-bold text-[#26D6A0] hover:bg-[#26D6A0] hover:text-[#0B1220] transition"
+            title="Open Full Interactive Chart in TradingView Tab"
           >
-            {expanded ? (
-              <Minimize2 className="h-4 w-4" />
-            ) : (
-              <Maximize2 className="h-4 w-4" />
-            )}
+            <ExternalLink className="h-3.5 w-3.5" />
+            <span>Open in TV</span>
           </button>
         </div>
       </div>
