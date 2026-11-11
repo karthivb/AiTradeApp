@@ -401,7 +401,7 @@ export const SettingsPage: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <Server className="h-5 w-5 text-[#26D6A0]" />
                     <span className="font-extrabold text-[#26D6A0] text-sm">
-                      Robinhood FastMCP Trading Bridge
+                      Robinhood MCP Trading Connection
                     </span>
                   </div>
                   <span
@@ -417,7 +417,7 @@ export const SettingsPage: React.FC = () => {
                   </span>
                 </div>
                 <p className="text-[11px] text-[#9BAFC4] mt-1.5">
-                  Connect TradePilot to your Robinhood account via a local FastMCP Python server using robin_stocks + pyotp. This enables options chain inspections, automated executions, and strict 1-contract live trading.
+                  Direct connection via MCP Server URL & Bearer Token. You do NOT need to expose your Robinhood password or 2FA TOTP key here when using a standard token-authenticated MCP endpoint or the official Robinhood Agentic endpoint.
                 </p>
                 {mcpBuyingPower !== null && (
                   <div className="mt-2.5 flex items-center gap-3 pt-2 border-t border-[#26D6A0]/20 text-[#26D6A0]">
@@ -435,27 +435,27 @@ export const SettingsPage: React.FC = () => {
                 </div>
               )}
 
-              {/* MCP Server Credentials Form */}
+              {/* Primary MCP Connection Form (URL & Token only) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="rounded-xl border border-[#1E2D45] bg-[#0B1220] p-4">
                   <label className="block text-[#9BAFC4] font-bold mb-1.5">
-                    FastMCP Server URL (Local or Tunnel)
+                    MCP Server URL (Local or Remote Endpoint)
                   </label>
                   <input
                     type="text"
                     value={rhMcpUrl}
                     onChange={(e) => setRhMcpUrl(e.target.value)}
-                    placeholder="http://localhost:8787"
+                    placeholder="http://localhost:8787 or https://agent.robinhood.com/mcp/trading"
                     className="w-full rounded-lg border border-[#1E2D45] bg-[#111C2E] px-3 py-2 text-white font-mono focus:border-[#26D6A0] focus:outline-none"
                   />
                   <span className="text-[10px] text-[#9BAFC4] mt-1 block">
-                    Default port 8787 when running python scripts/robinhood_mcp_server.py
+                    e.g. http://localhost:8787 or official Robinhood Agentic MCP endpoint
                   </span>
                 </div>
 
                 <div className="rounded-xl border border-[#1E2D45] bg-[#0B1220] p-4">
                   <label className="block text-[#9BAFC4] font-bold mb-1.5">
-                    MCP Bridge Auth Token
+                    MCP Bridge Auth Token / API Key
                   </label>
                   <input
                     type="text"
@@ -465,58 +465,7 @@ export const SettingsPage: React.FC = () => {
                     className="w-full rounded-lg border border-[#1E2D45] bg-[#111C2E] px-3 py-2 text-white font-mono focus:border-[#26D6A0] focus:outline-none"
                   />
                   <span className="text-[10px] text-[#9BAFC4] mt-1 block">
-                    Shared bearer secret between TradePilot and FastMCP server
-                  </span>
-                </div>
-
-                <div className="rounded-xl border border-[#1E2D45] bg-[#0B1220] p-4">
-                  <label className="block text-[#9BAFC4] font-bold mb-1.5">
-                    Robinhood Username / Email
-                  </label>
-                  <input
-                    type="text"
-                    value={rhUsername}
-                    onChange={(e) => setRhUsername(e.target.value)}
-                    placeholder="your_email@gmail.com"
-                    className="w-full rounded-lg border border-[#1E2D45] bg-[#111C2E] px-3 py-2 text-white font-mono focus:border-[#26D6A0] focus:outline-none"
-                  />
-                </div>
-
-                <div className="rounded-xl border border-[#1E2D45] bg-[#0B1220] p-4">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[#9BAFC4] font-bold">
-                      Robinhood Password
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="text-[#9BAFC4] hover:text-white"
-                    >
-                      {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                    </button>
-                  </div>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={rhPassword}
-                    onChange={(e) => setRhPassword(e.target.value)}
-                    placeholder="••••••••••••"
-                    className="w-full rounded-lg border border-[#1E2D45] bg-[#111C2E] px-3 py-2 text-white font-mono focus:border-[#26D6A0] focus:outline-none"
-                  />
-                </div>
-
-                <div className="rounded-xl border border-[#1E2D45] bg-[#0B1220] p-4 sm:col-span-2">
-                  <label className="block text-[#9BAFC4] font-bold mb-1.5">
-                    Robinhood 2FA TOTP Authenticator Key (16 Characters)
-                  </label>
-                  <input
-                    type="text"
-                    value={rhTotpSecret}
-                    onChange={(e) => setRhTotpSecret(e.target.value.replace(/\s/g, '').toUpperCase())}
-                    placeholder="e.g. 4XQZ9LM2KB7W1VTR"
-                    className="w-full rounded-lg border border-[#1E2D45] bg-[#111C2E] px-3 py-2 text-[#26D6A0] font-mono focus:border-[#26D6A0] focus:outline-none"
-                  />
-                  <span className="text-[10px] text-[#9BAFC4] mt-1 block">
-                    Find this in Robinhood App → Settings → Security & Privacy → Two-Factor Authentication → Authenticator App → View Manual Key
+                    Bearer token or API secret authorized to dispatch orders
                   </span>
                 </div>
               </div>
@@ -530,13 +479,63 @@ export const SettingsPage: React.FC = () => {
                   className="flex items-center gap-2 rounded-xl bg-[#26D6A0] px-4 py-2.5 font-bold text-[#0B1220] hover:bg-[#22C55E] transition disabled:opacity-50"
                 >
                   <RefreshCw className={`h-4 w-4 ${probingMcp ? 'animate-spin' : ''}`} />
-                  <span>{probingMcp ? 'Testing Connection...' : 'Test MCP Connection & Probe Account'}</span>
+                  <span>{probingMcp ? 'Testing Connection...' : 'Connect & Probe Robinhood MCP'}</span>
                 </button>
 
                 <div className="text-[11px] text-[#9BAFC4]">
-                  Credentials stored encrypted locally on your machine
+                  Zero password storage needed • Strictly 1-contract options limit
                 </div>
               </div>
+
+              {/* Collapsible Legacy Direct Credential Login (Optional fallback only) */}
+              <details className="rounded-xl border border-[#1E2D45] bg-[#0B1220] p-4">
+                <summary className="text-xs font-bold text-[#9BAFC4] cursor-pointer hover:text-white">
+                  ▶ Advanced / Legacy Credentials (Optional — Only if running local robin_stocks script)
+                </summary>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3 pt-3 border-t border-[#1E2D45]">
+                  <div>
+                    <label className="block text-[#9BAFC4] font-bold mb-1.5">Robinhood Username / Email</label>
+                    <input
+                      type="text"
+                      value={rhUsername}
+                      onChange={(e) => setRhUsername(e.target.value)}
+                      placeholder="your_email@gmail.com"
+                      className="w-full rounded-lg border border-[#1E2D45] bg-[#111C2E] px-3 py-2 text-white font-mono focus:border-[#26D6A0] focus:outline-none text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-[#9BAFC4] font-bold text-xs">Robinhood Password</label>
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="text-[#9BAFC4] hover:text-white"
+                      >
+                        {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      </button>
+                    </div>
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={rhPassword}
+                      onChange={(e) => setRhPassword(e.target.value)}
+                      placeholder="••••••••••••"
+                      className="w-full rounded-lg border border-[#1E2D45] bg-[#111C2E] px-3 py-2 text-white font-mono focus:border-[#26D6A0] focus:outline-none text-xs"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-[#9BAFC4] font-bold mb-1.5 text-xs">Robinhood 2FA TOTP Key (16 chars)</label>
+                    <input
+                      type="text"
+                      value={rhTotpSecret}
+                      onChange={(e) => setRhTotpSecret(e.target.value.replace(/\s/g, '').toUpperCase())}
+                      placeholder="4XQZ9LM2KB7W1VTR"
+                      className="w-full rounded-lg border border-[#1E2D45] bg-[#111C2E] px-3 py-2 text-[#26D6A0] font-mono focus:border-[#26D6A0] focus:outline-none text-xs"
+                    />
+                  </div>
+                </div>
+              </details>
 
               {/* Quickstart Setup Code Snippet */}
               <div className="rounded-xl border border-[#1E2D45] bg-[#0B1220] p-4 mt-2">

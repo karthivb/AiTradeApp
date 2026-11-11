@@ -45,6 +45,7 @@ export const TopNav: React.FC = () => {
     setTheme,
     textScale,
     setTextScale,
+    activeSection,
     setActiveSection,
     operatorEmail,
     secondsUntilCheckIn,
@@ -98,6 +99,7 @@ export const TopNav: React.FC = () => {
   };
 
   const todayNetPnl = activeAccount.realizedPnl + activeAccount.unrealizedPnl;
+  const isPaperTradingActive = activeSection === 'paper-trading';
 
   return (
     <>
@@ -254,33 +256,49 @@ export const TopNav: React.FC = () => {
             </span>
           </button>
 
-          {/* Paper Account Balance & P&L */}
-          <button
-            onClick={() => setActiveSection('paper-trading')}
-            className="hidden lg:flex items-center gap-3 rounded-xl border border-[#1E2D45] bg-[#0B1220] px-3.5 py-1.5 text-left hover:border-[#26D6A0]/60 transition"
-          >
-            <div>
-              <span className="text-[11px] font-medium text-[#9BAFC4] mr-1.5">
-                Paper BP:
-              </span>
-              <span className="font-mono text-xs font-extrabold text-white">
-                ${activeAccount.buyingPower.toLocaleString()}
-              </span>
-            </div>
-            <div className="h-4 w-px bg-[#1E2D45]" />
-            <div>
-              <span className="text-[11px] font-medium text-[#9BAFC4] mr-1.5">
-                Day P&L:
-              </span>
-              <span
-                className={`font-mono text-xs font-extrabold ${
-                  todayNetPnl >= 0 ? 'text-[#22C55E]' : 'text-[#EF4444]'
-                }`}
-              >
-                {todayNetPnl >= 0 ? '+' : ''}${todayNetPnl.toFixed(2)}
-              </span>
-            </div>
-          </button>
+          {/* Paper Account Balance & Quick 1-Click Toggle Switch */}
+          <div className="hidden lg:flex items-center gap-1.5 rounded-xl border border-[#1E2D45] bg-[#0B1220] p-1">
+            <button
+              onClick={() => setActiveSection(isPaperTradingActive ? 'dashboard' : 'paper-trading')}
+              className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                isPaperTradingActive
+                  ? 'bg-[#26D6A0] text-[#0B1220] shadow-sm'
+                  : 'bg-[#111C2E] text-[#26D6A0] hover:border-[#26D6A0]/60'
+              }`}
+              title="Click to toggle directly between Paper Trading Station and Dashboard"
+            >
+              <span className={`h-2 w-2 rounded-full ${isPaperTradingActive ? 'bg-[#0B1220]' : 'bg-[#26D6A0] animate-pulse'}`} />
+              <span className="font-extrabold">{isPaperTradingActive ? 'PAPER MODE ON' : 'PAPER TRADING'}</span>
+            </button>
+
+            <button
+              onClick={() => setActiveSection('paper-trading')}
+              className="flex items-center gap-3 px-2.5 py-1 text-left hover:text-white transition"
+              title="View Paper Portfolio Equity & Day P&L"
+            >
+              <div>
+                <span className="text-[10px] font-medium text-[#9BAFC4] mr-1">
+                  BP:
+                </span>
+                <span className="font-mono text-xs font-extrabold text-white">
+                  ${activeAccount.buyingPower.toLocaleString()}
+                </span>
+              </div>
+              <div className="h-4 w-px bg-[#1E2D45]" />
+              <div>
+                <span className="text-[10px] font-medium text-[#9BAFC4] mr-1">
+                  Day:
+                </span>
+                <span
+                  className={`font-mono text-xs font-extrabold ${
+                    todayNetPnl >= 0 ? 'text-[#22C55E]' : 'text-[#EF4444]'
+                  }`}
+                >
+                  {todayNetPnl >= 0 ? '+' : ''}${todayNetPnl.toFixed(2)}
+                </span>
+              </div>
+            </button>
+          </div>
 
           {/* Prominent Light / Dark Theme Segmented Toggle */}
           <div
