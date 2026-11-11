@@ -8,6 +8,7 @@ export type NavigationSection =
   | 'discipline'
   | 'strategy-lab'
   | 'options-chain'
+  | 'screener'
   | 'paper-trading'
   | 'live-trading'
   | 'automation'
@@ -17,6 +18,38 @@ export type NavigationSection =
   | 'backtesting'
   | 'brokers'
   | 'settings';
+
+export type ScreenerCategory =
+  | 'DAILY_GAINERS'
+  | 'DAILY_LOSERS'
+  | 'PRE_MARKET_MOVERS'
+  | 'AFTER_MARKET_MOVERS'
+  | 'PENNY_STOCK_MOVERS';
+
+export interface ScreenerItem {
+  symbol: string;
+  name: string;
+  price: number;
+  change: number;
+  changePct: number;
+  preMarketChangePct?: number;
+  afterHoursChangePct?: number;
+  volume: number;
+  avgVolume10d: number;
+  volumeSurgePct: number; // e.g. 68 for +68% surge
+  relativeVolume: number; // RVOL = volume / avgVolume10d
+  marketCap: number; // in USD
+  marketCapFormatted: string; // e.g. "$18.4M", "$2.8B"
+  floatShares?: number;
+  sector: string;
+  industry: string;
+  dayLow: number;
+  dayHigh: number;
+  hasOptions: boolean;
+  catalyst: string;
+  category: ScreenerCategory;
+  isPennyMoverRuleCompliant?: boolean; // Price $2-$10, Cap $1M-$50M, 10d Vol > 50%, Change > 10%
+}
 
 export type MarketStatus = 'PRE-MARKET' | 'OPEN' | 'CLOSED' | 'AFTER-HOURS';
 

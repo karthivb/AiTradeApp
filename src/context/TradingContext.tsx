@@ -179,6 +179,8 @@ interface TradingContextValue {
   setCheckInTimerActive: (active: boolean) => void;
   checkInAlertDue: boolean;
   acknowledgeCheckInAlert: () => void;
+  openMindsetCheckInModal: () => void;
+  isRegularMarketOpen: () => boolean;
   dailyAllowanceUsd: number;
   setDailyAllowanceUsd: (usd: number) => void;
   remainingDailyAllowanceUsd: number;
@@ -915,24 +917,62 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({
     },
   ]);
 
+  // Helper to determine if currently inside US Regular Market Open Hours (9:30 AM - 4:00 PM ET / 6:30 AM - 1:00 PM PT, Mon-Fri)
+  const isRegularMarketOpen = (): boolean => {
+    if (market.marketStatus === 'OPEN') return true;
+    if (
+      market.marketStatus === 'CLOSED' ||
+      market.marketStatus === 'PRE-MARKET' ||
+      market.marketStatus === 'AFTER-HOURS'
+    ) {
+      return false;
+    }
+    const now = new Date();
+    const dayStr = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York',
+      weekday: 'short',
+    }).format(now);
+    const isWeekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].includes(dayStr);
+    if (!isWeekday) return false;
+
+    const timeOnly = now.toLocaleTimeString('en-US', {
+      timeZone: 'America/New_York',
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    const [h, m] = timeOnly.split(':').map(Number);
+    const etMinutes = (h || 0) * 60 + (m || 0);
+
+    // US Regular market open: 9:30 AM ET (570) to 4:00 PM ET (960)
+    return etMinutes >= 570 && etMinutes < 960;
+  };
+
   // 10-Minute Check-In Countdown Interval
   useEffect(() => {
     if (!checkInTimerActive) return;
     const timer = setInterval(() => {
       setSecondsUntilCheckIn((prev) => {
         if (prev <= 1) {
-          setCheckInAlertDue(true);
+          // USER CONSTRAINT: Popup to remind to capture mindset details works during regular market open hours only!
+          if (isRegularMarketOpen()) {
+            setCheckInAlertDue(true);
+          }
           return checkInIntervalMinutes * 60;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [checkInTimerActive, checkInIntervalMinutes]);
+  }, [checkInTimerActive, checkInIntervalMinutes, market.marketStatus]);
 
   const acknowledgeCheckInAlert = () => {
     setCheckInAlertDue(false);
     setSecondsUntilCheckIn(checkInIntervalMinutes * 60);
+  };
+
+  const openMindsetCheckInModal = () => {
+    setCheckInAlertDue(true);
   };
 
   // Load persisted state if present
@@ -2422,6 +2462,8 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({
         setCheckInTimerActive,
         checkInAlertDue,
         acknowledgeCheckInAlert,
+        openMindsetCheckInModal,
+        isRegularMarketOpen,
         dailyAllowanceUsd,
         setDailyAllowanceUsd,
         remainingDailyAllowanceUsd,

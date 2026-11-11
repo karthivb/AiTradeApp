@@ -8,6 +8,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { DisciplinePage } from './pages/DisciplinePage';
 import { StrategyLabPage } from './pages/StrategyLabPage';
 import { OptionsChainPage } from './pages/OptionsChainPage';
+import { ScreenerPage } from './pages/ScreenerPage';
 import { PaperTradingPage } from './pages/PaperTradingPage';
 import { LiveTradingPage } from './pages/LiveTradingPage';
 import { AutomationPage } from './pages/AutomationPage';
@@ -18,9 +19,15 @@ import { BacktestingPage } from './pages/BacktestingPage';
 import { BrokerConnectionsPage } from './pages/BrokerConnectionsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { LoginPage } from './pages/LoginPage';
+import { MindsetReminderModal } from './components/discipline/MindsetReminderModal';
 
 const MainShell: React.FC = () => {
-  const { activeSection, setActiveSection } = useTrading();
+  const {
+    activeSection,
+    setActiveSection,
+    checkInAlertDue,
+    acknowledgeCheckInAlert,
+  } = useTrading();
   const { isAuthenticated, isLoading } = useAuth();
 
   if (!isLoading && !isAuthenticated) {
@@ -37,6 +44,8 @@ const MainShell: React.FC = () => {
         return <StrategyLabPage />;
       case 'options-chain':
         return <OptionsChainPage />;
+      case 'screener':
+        return <ScreenerPage />;
       case 'paper-trading':
         return <PaperTradingPage />;
       case 'live-trading':
@@ -76,6 +85,12 @@ const MainShell: React.FC = () => {
           </div>
         </main>
       </div>
+
+      {/* Trader Discipline Mindset Reminder Pop-Up (Triggered during Regular Market Hours) */}
+      <MindsetReminderModal
+        isOpen={checkInAlertDue}
+        onClose={acknowledgeCheckInAlert}
+      />
     </div>
   );
 };

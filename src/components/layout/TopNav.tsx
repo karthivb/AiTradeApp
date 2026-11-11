@@ -1,12 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AlertOctagon,
+  AlertTriangle,
   Bell,
+  CheckCircle2,
+  ChevronRight,
+  Clock,
   HeartHandshake,
   LogOut,
   Moon,
   Pause,
   Play,
+  RotateCw,
   ShieldCheck,
   Sun,
   TrendingDown,
@@ -18,6 +23,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useTrading } from '../../context/TradingContext';
 import { MarketStatus } from '../../types/trading';
 import { AuthModal } from '../auth/AuthModal';
+
+const POPULAR_SYMBOLS = ['SPX', 'SPY', 'QQQ', 'NVDA', 'AAPL', 'TSLA', 'MSFT', 'META', 'AMD', 'AMZN', 'IWM', 'COIN'];
 
 export const TopNav: React.FC = () => {
   const {
@@ -42,6 +49,7 @@ export const TopNav: React.FC = () => {
     operatorEmail,
     secondsUntilCheckIn,
     checkInAlertDue,
+    openMindsetCheckInModal,
     remainingDailyAllowanceUsd,
   } = useTrading();
   const { profile, signOut } = useAuth();
@@ -49,6 +57,38 @@ export const TopNav: React.FC = () => {
   const [showNotifs, setShowNotifs] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const cycleNextSymbol = () => {
+    const currentIndex = POPULAR_SYMBOLS.indexOf(activeSymbol);
+    const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % POPULAR_SYMBOLS.length;
+    selectTradingSymbol(POPULAR_SYMBOLS[nextIndex]);
+  };
+
+  // Keyboard hotkey 'n' or 'N' to cycle symbols globally
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) {
+        return;
+      }
+      if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        cycleNextSymbol();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeSymbol]);
+
+  // Real-time market discipline clock (Pacific Time)
+  const now = new Date();
+  const ptTimeStr = now.toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles', hour12: false, hour: '2-digit', minute: '2-digit' });
+  const [ptH, ptM] = ptTimeStr.split(':').map(Number);
+  const ptMinutes = (ptH || 0) * 60 + (ptM || 0);
+
+  // 6:30 AM PT = 390, 8:30 AM PT = 510, 12:30 PM PT = 750, 1:00 PM PT = 780
+  const isPrimeWindow = ptMinutes >= 390 && ptMinutes < 510;
+  const isChopZone = ptMinutes >= 510 && ptMinutes < 750;
+  const isPowerHour = ptMinutes >= 750 && ptMinutes <= 780;
 
   const statusColor: Record<MarketStatus, string> = {
     OPEN: 'bg-[#22C55E]/15 text-[#22C55E] border-[#22C55E]/40',
@@ -83,9 +123,22 @@ export const TopNav: React.FC = () => {
                 <option value="META">META</option>
                 <option value="AMD">AMD</option>
                 <option value="AMZN">AMZN</option>
+                <option value="PLTR">PLTR</option>
+                <option value="SMCI">SMCI</option>
                 <option value="IWM">IWM</option>
                 <option value="COIN">COIN</option>
               </select>
+
+              {/* Quick Cycle Symbol Button Hotkey N */}
+              <button
+                type="button"
+                onClick={cycleNextSymbol}
+                className="flex items-center gap-1 rounded-lg border border-[#26D6A0]/40 bg-[#111C2E] px-2 py-0.5 font-mono text-[11px] font-bold text-[#26D6A0] hover:bg-[#26D6A0] hover:text-[#0B1220] transition"
+                title="Cycle Next Symbol (Hotkey: N)"
+              >
+                <span>Next</span>
+                <span className="rounded bg-[#0B1220] px-1 text-[9px]">N</span>
+              </button>
               <span className="font-mono text-base font-extrabold text-white">
                 ${market.spotPrice.toFixed(2)}
               </span>
@@ -181,15 +234,15 @@ export const TopNav: React.FC = () => {
 
         {/* Right: Paper Equity, 10m Discipline Pill, Theme Switcher (Light/Dark), Text Size, Kill Switch, Account */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* 10-Min Discipline & Remaining Daily Budget Pill */}
+          {/* 10-Min Discipline & Mindset Check-In Modal Pill */}
           <button
-            onClick={() => setActiveSection('discipline')}
+            onClick={openMindsetCheckInModal}
             className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-bold transition ${
               checkInAlertDue
-                ? 'border-[#F59E0B] bg-[#F59E0B]/20 text-[#F59E0B] animate-pulse'
+                ? 'border-[#F59E0B] bg-[#F59E0B]/20 text-[#F59E0B] animate-pulse ring-2 ring-[#F59E0B]'
                 : 'border-[#26D6A0]/40 bg-[#0B1220] text-[#26D6A0] hover:border-[#26D6A0]'
             }`}
-            title="10-Min Brain Fog & Discipline Coach — Remember Family & Tomorrow"
+            title="10-Min Trader Mindset & Discipline Pop-Up — Remember Family & Tomorrow"
           >
             <HeartHandshake className="h-4 w-4 shrink-0" />
             <span className="font-mono">
@@ -197,7 +250,7 @@ export const TopNav: React.FC = () => {
               {String(secondsUntilCheckIn % 60).padStart(2, '0')}
             </span>
             <span className="hidden md:inline text-white font-semibold">
-              • ${remainingDailyAllowanceUsd.toFixed(0)} Left Today
+              • Mindset Check
             </span>
           </button>
 

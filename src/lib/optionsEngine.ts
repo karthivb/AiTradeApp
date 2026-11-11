@@ -124,22 +124,28 @@ export function calculateBlackScholesGreeks(
 }
 
 export const EXPIRATION_DATES = [
-  { date: '2026-11-10', label: '2026-11-10 (0DTE Today)', dte: 0 },
-  { date: '2026-11-11', label: '2026-11-11 (1DTE Wed)', dte: 1 },
-  { date: '2026-11-12', label: '2026-11-12 (2DTE Thu)', dte: 2 },
-  { date: '2026-11-13', label: '2026-11-13 (3DTE Weekly Fri)', dte: 3 },
+  { date: '2026-11-10', label: 'Today (0DTE)', dte: 0 },
+  { date: '2026-11-11', label: '1DTE (Wed)', dte: 1 },
+  { date: '2026-11-13', label: '3DTE (Weekly Fri)', dte: 3 },
+  { date: '2026-11-20', label: '10DTE (Weekly)', dte: 10 },
+  { date: '2026-12-18', label: '38DTE (Monthly)', dte: 38 },
+  { date: '2027-01-15', label: '66DTE (LEAPS/Q1)', dte: 66 },
 ];
 
 export function getStrikeStep(spotPrice: number): number {
-  if (spotPrice >= 1000) return 5;
-  if (spotPrice >= 250) return 5;
-  if (spotPrice >= 100) return 1;
-  return 1;
+  if (spotPrice >= 2000) return 10;
+  if (spotPrice >= 500) return 5;
+  if (spotPrice >= 200) return 2.5;
+  if (spotPrice >= 50) return 1;
+  if (spotPrice >= 15) return 0.5;
+  if (spotPrice >= 5) return 0.5;
+  return 0.25;
 }
 
 export function getNearestAtmStrike(spotPrice: number): number {
   const step = getStrikeStep(spotPrice);
-  return Math.round(spotPrice / step) * step;
+  const rounded = Math.round(spotPrice / step) * step;
+  return Number(rounded.toFixed(2));
 }
 
 function formatOccSymbol(
