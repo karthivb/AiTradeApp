@@ -23,28 +23,32 @@ import { TradingPermissionMode } from '../types/trading';
 
 const MCP_SETUP_STEPS = [
   {
-    step: 'Step 1: Install & Create the Robinhood MCP Server',
-    desc: 'Robinhood does not offer a public browser CORS API, so a lightweight Python/Node MCP server using robin_stocks + FastMCP bridges Robinhood safely to TradePilot.',
-    code: `# Create folder & install FastMCP + robin_stocks + pyotp
-mkdir robinhood-mcp-server && cd robinhood-mcp-server
+    step: 'Option A: Official Robinhood Agentic MCP Server (Token-Only — Recommended)',
+    desc: 'Connect directly to Robinhood’s official Agentic Trading MCP endpoint without sharing your username, password, or 2FA secret key. All trades run in an isolated Agentic sub-account.',
+    code: `# Configure official endpoint in TradePilot Settings → Robinhood MCP Adapter:
+MCP Server URL: https://agent.robinhood.com/mcp/trading
+MCP Auth Token: [Your Agentic Bearer Token / API Key from Robinhood]
+
+# Zero Python scripts, zero password exposure, zero 2FA session drops!`,
+  },
+  {
+    step: 'Option B: Local Python FastMCP Bridge (FastMCP + robin_stocks)',
+    desc: 'If running a local machine bridge on localhost:8787 using FastMCP to talk to your account via JSON-RPC:',
+    code: `# Install dependencies
 pip install fastmcp robin_stocks pyotp uvicorn
 
-# Run the MCP HTTP bridge on port 8787
-python server.py`,
+# Run the local server
+python scripts/robinhood_mcp_server.py
+
+# In TradePilot Settings → Robinhood MCP Adapter:
+MCP Server URL: http://localhost:8787
+MCP Auth Token: tp_secret_bridge_token_2026`,
   },
   {
-    step: 'Step 2: Configure Robinhood TOTP (2FA Authenticator Secret)',
-    desc: 'In Robinhood App → Security & Privacy → Two-Factor Authentication → Authenticator App → Copy your 16-character setup key so the MCP server can generate 2FA codes automatically.',
-    code: `ROBINHOOD_USERNAME=your_robinhood_email@gmail.com
-ROBINHOOD_PASSWORD=your_robinhood_password
-ROBINHOOD_TOTP_SECRET=YOUR16CHARTOTPKEY
-ROBINHOOD_MCP_AUTH_TOKEN=tp_secret_bridge_token_2026`,
-  },
-  {
-    step: 'Step 3: Wire MCP Server into TradePilot Netlify Backend',
-    desc: 'Point your Netlify serverless adapter (/.netlify/functions/robinhood-mcp-adapter) to your running MCP server URL and token:',
-    code: `npx.cmd --yes netlify-cli env:set ROBINHOOD_MCP_SERVER_URL "https://your-mcp-tunnel.ngrok-free.app"
-npx.cmd --yes netlify-cli env:set ROBINHOOD_MCP_AUTH_TOKEN "tp_secret_bridge_token_2026"`,
+    step: 'Option C: Wire MCP into TradePilot Netlify Functions Backend',
+    desc: 'Optionally set your production Netlify serverless adapter to route to your MCP tunnel:',
+    code: `npx.cmd --yes netlify-cli env:set ROBINHOOD_MCP_SERVER_URL "https://agent.robinhood.com/mcp/trading"
+npx.cmd --yes netlify-cli env:set ROBINHOOD_MCP_AUTH_TOKEN "your_token"`,
   },
 ];
 
