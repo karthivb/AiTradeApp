@@ -20,11 +20,15 @@ export type NavigationSection =
   | 'settings';
 
 export type ScreenerCategory =
+  | 'AI_STOCKS'
+  | 'MEGA_CAP'
+  | 'VOLATILITY_STOCKS'
+  | 'TRUMP_NEWS_STOCKS'
+  | 'PENNY_STOCK_MOVERS'
   | 'DAILY_GAINERS'
   | 'DAILY_LOSERS'
   | 'PRE_MARKET_MOVERS'
-  | 'AFTER_MARKET_MOVERS'
-  | 'PENNY_STOCK_MOVERS';
+  | 'AFTER_MARKET_MOVERS';
 
 export interface ScreenerItem {
   symbol: string;
