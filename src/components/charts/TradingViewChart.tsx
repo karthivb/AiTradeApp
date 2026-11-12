@@ -204,7 +204,6 @@ const SingleTvWidget: React.FC<{
   showRSI: boolean;
   showSupertrend: boolean;
   showADX: boolean;
-  showEMA: boolean;
   height: string | number;
 }> = ({
   tvSymbol,
@@ -216,7 +215,6 @@ const SingleTvWidget: React.FC<{
   showRSI,
   showSupertrend,
   showADX,
-  showEMA,
   height,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -227,29 +225,13 @@ const SingleTvWidget: React.FC<{
     if (!el) return;
     el.innerHTML = '';
 
-    const studies: (string | object)[] = [];
+    const studies: string[] = [];
     if (showBB) studies.push('BB@tv-basicstudies');
     if (showMACD) studies.push('MACD@tv-basicstudies');
     if (showVWAP) studies.push('VWAP@tv-basicstudies');
     if (showRSI) studies.push('RSI@tv-basicstudies');
     if (showSupertrend) studies.push('VSTOP@tv-basicstudies');
     if (showADX) studies.push('DM@tv-basicstudies');
-
-    // 9, 21, 200 Exponential Moving Averages for Crossover Trading
-    if (showEMA) {
-      studies.push({
-        id: 'MAExp@tv-basicstudies',
-        inputs: { length: 9 },
-      });
-      studies.push({
-        id: 'MAExp@tv-basicstudies',
-        inputs: { length: 21 },
-      });
-      studies.push({
-        id: 'MAExp@tv-basicstudies',
-        inputs: { length: 200 },
-      });
-    }
 
     const uniqueId = `tv-${Math.random().toString(36).substring(2, 9)}`;
     const widgetContainer = document.createElement('div');
@@ -275,22 +257,6 @@ const SingleTvWidget: React.FC<{
     `;
     el.appendChild(tvStyle);
 
-    // Thick line styles and high-contrast colors for 9/21/200 EMA Cross
-    const studiesOverrides: Record<string, string | number> = {};
-    if (showEMA) {
-      // General thick line override
-      studiesOverrides['moving average exponential.plot.linewidth'] = 3;
-      // 9 EMA: Fast trigger line in high-vis Emerald Green (width: 3)
-      studiesOverrides['moving average exponential.0.plot.linewidth'] = 3;
-      studiesOverrides['moving average exponential.0.plot.color'] = '#00E676';
-      // 21 EMA: Trend pullback / baseline in bright Amber/Gold (width: 3)
-      studiesOverrides['moving average exponential.1.plot.linewidth'] = 3;
-      studiesOverrides['moving average exponential.1.plot.color'] = '#FFB300';
-      // 200 EMA: Macro institutional bull/bear line in Vivid Neon Purple (width: 4)
-      studiesOverrides['moving average exponential.2.plot.linewidth'] = 4;
-      studiesOverrides['moving average exponential.2.plot.color'] = '#E040FB';
-    }
-
     const script = document.createElement('script');
     script.src =
       'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
@@ -315,9 +281,6 @@ const SingleTvWidget: React.FC<{
       save_image: true,
       calendar: false,
       studies: studies,
-      ...(Object.keys(studiesOverrides).length > 0
-        ? { studies_overrides: studiesOverrides }
-        : {}),
       show_popup_button: true,
       popup_width: '1000',
       popup_height: '650',
@@ -339,7 +302,6 @@ const SingleTvWidget: React.FC<{
     showRSI,
     showSupertrend,
     showADX,
-    showEMA,
     heightPx,
   ]);
 
@@ -350,7 +312,6 @@ const SingleTvWidget: React.FC<{
     showRSI ? 'rsi' : '',
     showSupertrend ? 'supertrend' : '',
     showADX ? 'adx' : '',
-    showEMA ? 'ema' : '',
   ]
     .filter(Boolean)
     .join('-');
@@ -382,7 +343,6 @@ export const TradingViewChart: React.FC = () => {
   const [showRSI, setShowRSI] = useState<boolean>(true);
   const [showSupertrend, setShowSupertrend] = useState<boolean>(false);
   const [showADX, setShowADX] = useState<boolean>(false);
-  const [showEMA9_21_200, setShowEMA9_21_200] = useState<boolean>(true);
   const [customInput, setCustomInput] = useState<string>('');
 
   // 4-way height mode: NORMAL (520px) -> EXPANDED (680px) -> TALL (840px) -> FULLSCREEN (100vh)
@@ -750,84 +710,30 @@ export const TradingViewChart: React.FC = () => {
           >
             VWAP {showVWAP ? '✓' : ''}
           </button>
-          <button
-            type="button"
-            onClick={() => setShowEMA9_21_200(!showEMA9_21_200)}
-            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 font-mono text-xs font-bold transition ${
-              showEMA9_21_200
-                ? 'bg-[#26D6A0] text-[#0B1220] shadow-sm'
-                : 'border border-[#1E2D45] bg-[#0B1220] text-[#9BAFC4] hover:text-white'
-            }`}
-            title="Toggle 9 / 21 / 200 EMA Crossover with Thick Lines (9=Green, 21=Amber, 200=Purple)"
-          >
-            <span className="flex items-center gap-1">
-              <span className="inline-block h-2 w-2 rounded-full bg-[#00E676]" />
-              <span className="inline-block h-2 w-2 rounded-full bg-[#FFB300]" />
-              <span className="inline-block h-2 w-2 rounded-full bg-[#E040FB]" />
-            </span>
-            <span>9/21/200 EMA {showEMA9_21_200 ? '✓' : ''}</span>
-          </button>
         </div>
       </div>
 
-      {/* 9/21/200 EMA Crossover Legend & In-Iframe Symbol Change Status Bar */}
+      {/* In-Iframe Symbol Change & Indicator Tips Bar */}
       <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-[#26D6A0]/30 bg-[#111C2E] px-3.5 py-2 text-xs">
-        <div className="flex flex-wrap items-center gap-3">
-          {/* EMA Crossover Legend Pills */}
-          <div className="flex items-center gap-2">
-            <span className="font-extrabold uppercase tracking-wide text-white flex items-center gap-1.5">
-              <span className="flex h-2 w-2 rounded-full bg-[#00E676] animate-pulse" />
-              9/21/200 EMA Cross:
-            </span>
-            <div className="flex items-center gap-1.5 font-mono text-[11px]">
-              <span
-                className="inline-flex items-center gap-1 rounded bg-[#00E676]/15 border border-[#00E676]/40 px-2 py-0.5 font-bold text-[#00E676]"
-                title="Fast Trigger EMA (Length: 9, Thick Line: 3px)"
-              >
-                <span className="inline-block h-2 w-2 rounded-full bg-[#00E676]" />
-                9 EMA (Fast)
-              </span>
-              <span
-                className="inline-flex items-center gap-1 rounded bg-[#FFB300]/15 border border-[#FFB300]/40 px-2 py-0.5 font-bold text-[#FFB300]"
-                title="Trend Baseline EMA (Length: 21, Thick Line: 3px)"
-              >
-                <span className="inline-block h-2 w-2 rounded-full bg-[#FFB300]" />
-                21 EMA (Trend)
-              </span>
-              <span
-                className="inline-flex items-center gap-1 rounded bg-[#E040FB]/15 border border-[#E040FB]/40 px-2 py-0.5 font-bold text-[#E040FB]"
-                title="Macro Bull/Bear Boundary (Length: 200, Extra-Thick Line: 4px)"
-              >
-                <span className="inline-block h-2 w-2 rounded-full bg-[#E040FB]" />
-                200 EMA (Macro)
-              </span>
-            </div>
-          </div>
-
-          <span className="hidden md:inline text-[#1E2D45]">|</span>
-
-          {/* Strategy Rule Explanation */}
-          <span className="text-[11px] text-[#9BAFC4]">
-            <strong className="text-white">Rule:</strong> Bullish Cross when 9 crosses above 21 over 200 • Bearish breakdown when 9 crosses below 21 under 200
+        <div className="flex items-center gap-2">
+          <span className="flex h-2 w-2 rounded-full bg-[#26D6A0] animate-pulse" />
+          <span className="font-semibold text-white">Interactive Chart Active:</span>
+          <span className="text-[#9BAFC4]">
+            Click ticker ({activeSymbol}) to switch symbols, or click <strong className="text-white">fx Indicators</strong> in the chart toolbar to add any indicator from TradingView's library.
           </span>
         </div>
 
         <div className="flex items-center gap-2 text-[11px] font-mono">
-          <span className="text-[#9BAFC4] flex items-center gap-1">
-            <Search className="h-3.5 w-3.5 text-[#26D6A0]" />
-            Click symbol in chart ({activeSymbol}) to search
+          <span className="text-[#26D6A0] flex items-center gap-1 font-semibold">
+            <Search className="h-3.5 w-3.5" />
+            In-Chart Symbol Search Enabled
           </span>
         </div>
       </div>
 
       {/* Active Indicators Pill Tray */}
       <div className="flex flex-wrap items-center gap-1.5 px-1 text-xs">
-        <span className="text-[11px] font-bold text-[#9BAFC4]">Active Chart Indicators:</span>
-        {showEMA9_21_200 && (
-          <span className="rounded bg-[#00E676]/15 border border-[#00E676]/40 px-2 py-0.5 text-[11px] font-mono font-bold text-[#00E676]">
-            EMA 9/21/200 (3px/4px)
-          </span>
-        )}
+        <span className="text-[11px] font-bold text-[#9BAFC4]">Active Indicators:</span>
         {showRSI && (
           <span className="rounded bg-[#26D6A0]/15 border border-[#26D6A0]/40 px-2 py-0.5 text-[11px] font-mono font-bold text-[#26D6A0]">
             RSI (14)
@@ -858,9 +764,9 @@ export const TradingViewChart: React.FC = () => {
             ADX / Directional Movement
           </span>
         )}
-        {!showEMA9_21_200 && !showRSI && !showMACD && !showBB && !showVWAP && !showSupertrend && !showADX && (
+        {!showRSI && !showMACD && !showBB && !showVWAP && !showSupertrend && !showADX && (
           <span className="text-[11px] text-[#9BAFC4] italic">
-            None selected (Click indicator buttons above or 'fx' in chart toolbar)
+            None selected (Toggle preset buttons above or click 'fx' in the chart toolbar)
           </span>
         )}
       </div>
@@ -885,7 +791,6 @@ export const TradingViewChart: React.FC = () => {
               showRSI={showRSI}
               showSupertrend={showSupertrend}
               showADX={showADX}
-              showEMA={showEMA9_21_200}
               height={splitChartHeight}
             />
           </div>
@@ -906,7 +811,6 @@ export const TradingViewChart: React.FC = () => {
               showRSI={showRSI}
               showSupertrend={showSupertrend}
               showADX={showADX}
-              showEMA={showEMA9_21_200}
               height={splitChartHeight}
             />
           </div>
@@ -922,7 +826,6 @@ export const TradingViewChart: React.FC = () => {
           showRSI={showRSI}
           showSupertrend={showSupertrend}
           showADX={showADX}
-          showEMA={showEMA9_21_200}
           height={chartHeight}
         />
       )}
