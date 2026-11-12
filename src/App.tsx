@@ -9,6 +9,7 @@ import { DisciplinePage } from './pages/DisciplinePage';
 import { StrategyLabPage } from './pages/StrategyLabPage';
 import { OptionsChainPage } from './pages/OptionsChainPage';
 import { ScreenerPage } from './pages/ScreenerPage';
+import { GithubAlertsPage } from './pages/GithubAlertsPage';
 import { PaperTradingPage } from './pages/PaperTradingPage';
 import { LiveTradingPage } from './pages/LiveTradingPage';
 import { AutomationPage } from './pages/AutomationPage';
@@ -46,6 +47,8 @@ const MainShell: React.FC = () => {
         return <OptionsChainPage />;
       case 'screener':
         return <ScreenerPage />;
+      case 'github-alerts':
+        return <GithubAlertsPage />;
       case 'paper-trading':
         return <PaperTradingPage />;
       case 'live-trading':

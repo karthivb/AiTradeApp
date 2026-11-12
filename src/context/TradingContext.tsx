@@ -3,6 +3,8 @@ import {
   AuditLogEntry,
   BrainFogLevel,
   DailyProfitRecord,
+  DayTraderSkillAlert,
+  DayTraderAlertType,
   DisciplineCheckInLog,
   DisciplineMood,
   EntryRuleConfig,
@@ -194,6 +196,16 @@ interface TradingContextValue {
     importedCount: number;
     error?: string;
   };
+
+  // GitHub Day Trader Skill Alerts (Jakeschincariol/day-trader-skill)
+  dayTraderAlerts: DayTraderSkillAlert[];
+  totalAlertsCreatedCount: number;
+  addDayTraderAlert: (alertInput: Omit<DayTraderSkillAlert, 'id' | 'createdAt' | 'expiresAt' | 'status' | 'sourceSkill'>) => void;
+  createTradePlanAlertTriad: (symbol: string, stopPrice: number, targetPrice: number, closeTimeEt?: string) => void;
+  deleteDayTraderAlert: (id: string) => void;
+  clearExpiredAlerts: () => number;
+  clearAllDayTraderAlerts: () => void;
+
   notifications: NotificationItem[];
   markAllNotificationsRead: () => void;
   auditLogs: AuditLogEntry[];
@@ -917,6 +929,50 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({
     },
   ]);
 
+  // GitHub Day Trader Skill Alerts State (Jakeschincariol/day-trader-skill)
+  // Tracks created alerts and automatically purges alerts older than 2 days (48 hours)
+  const [totalAlertsCreatedCount, setTotalAlertsCreatedCount] = useState<number>(3);
+  const [dayTraderAlerts, setDayTraderAlerts] = useState<DayTraderSkillAlert[]>([
+    {
+      id: 'alert-initial-1',
+      symbol: 'SPX',
+      alertType: 'STOP_LOSS',
+      targetPrice: 5960,
+      triggerCondition: 'SPX <= $5960.00 (-20% Trade Stop)',
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 42).toISOString(),
+      status: 'ACTIVE',
+      currentPriceAtCreation: 5978.4,
+      sourceSkill: 'trader-alerts (Jakeschincariol/day-trader-skill)',
+      notes: 'Initial stop-loss alert for active 0DTE bull call spread',
+    },
+    {
+      id: 'alert-initial-2',
+      symbol: 'SPX',
+      alertType: 'PROFIT_TARGET',
+      targetPrice: 6010,
+      triggerCondition: 'SPX >= $6010.00 (+30% Profit Target)',
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 42).toISOString(),
+      status: 'ACTIVE',
+      currentPriceAtCreation: 5978.4,
+      sourceSkill: 'trader-alerts (Jakeschincariol/day-trader-skill)',
+      notes: 'Initial profit target harvest alert at $6010 strike',
+    },
+    {
+      id: 'alert-initial-3',
+      symbol: 'SPX',
+      alertType: 'FLAT_BY_CLOSE',
+      triggerCondition: '3:55 PM ET Mandatory Flatten Alert',
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 42).toISOString(),
+      status: 'ACTIVE',
+      currentPriceAtCreation: 5978.4,
+      sourceSkill: 'trader-alerts (Jakeschincariol/day-trader-skill)',
+      notes: 'Closing warning: Close all 0DTE positions before 4:00 PM bell to avoid settlement assignment',
+    },
+  ]);
+
   // Helper to determine if currently inside US Regular Market Open Hours (9:30 AM - 4:00 PM ET / 6:30 AM - 1:00 PM PT, Mon-Fri)
   const isRegularMarketOpen = (): boolean => {
     if (market.marketStatus === 'OPEN') return true;
@@ -991,6 +1047,10 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({
         if (parsed.disciplineLogs) setDisciplineLogs(parsed.disciplineLogs);
         if (typeof parsed.dailyAllowanceUsd === 'number')
           setDailyAllowanceUsd(parsed.dailyAllowanceUsd);
+        if (Array.isArray(parsed.dayTraderAlerts))
+          setDayTraderAlerts(parsed.dayTraderAlerts);
+        if (typeof parsed.totalAlertsCreatedCount === 'number')
+          setTotalAlertsCreatedCount(parsed.totalAlertsCreatedCount);
       }
     } catch {
       // Ignore storage parse error
@@ -1011,6 +1071,8 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({
           dailyProfitRecords,
           disciplineLogs,
           dailyAllowanceUsd,
+          dayTraderAlerts,
+          totalAlertsCreatedCount,
         })
       );
     } catch {
@@ -1025,6 +1087,8 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({
     dailyProfitRecords,
     disciplineLogs,
     dailyAllowanceUsd,
+    dayTraderAlerts,
+    totalAlertsCreatedCount,
   ]);
 
   useEffect(() => {
@@ -2375,6 +2439,137 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({
     setDisciplineLogs((prev) => prev.filter((d) => d.id !== id));
   };
 
+  // ============================================================================
+  // GitHub Day Trader Skill Alerts Management (Jakeschincariol/day-trader-skill)
+  // Automatically tracks total alerts and clears alerts after 2 days (48 hours)
+  // ============================================================================
+  const addDayTraderAlert = (
+    alertInput: Omit<DayTraderSkillAlert, 'id' | 'createdAt' | 'expiresAt' | 'status' | 'sourceSkill'>
+  ) => {
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString(); // Strictly 2 days / 48h
+    const newAlert: DayTraderSkillAlert = {
+      ...alertInput,
+      id: `gt-alert-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      createdAt: now.toISOString(),
+      expiresAt,
+      status: 'ACTIVE',
+      sourceSkill: 'trader-alerts (Jakeschincariol/day-trader-skill)',
+    };
+
+    setDayTraderAlerts((prev) => [newAlert, ...prev]);
+    setTotalAlertsCreatedCount((prev) => prev + 1);
+
+    pushNotification(
+      'ENTRY_SIGNAL',
+      'INFO',
+      `GitHub Alert Created: ${newAlert.symbol} (${newAlert.alertType})`,
+      `${newAlert.triggerCondition} • Auto-expires in 2 days on ${new Date(expiresAt).toLocaleDateString()}`
+    );
+  };
+
+  // Convert trade plan into a 3-alert triad: Stop Loss, Profit Target, Flat by Close
+  const createTradePlanAlertTriad = (
+    symbol: string,
+    stopPrice: number,
+    targetPrice: number,
+    closeTimeEt: string = '15:55'
+  ) => {
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString();
+    const currentPrice = market.spotPrice;
+
+    const triad: DayTraderSkillAlert[] = [
+      {
+        id: `gt-alert-${Date.now()}-stop`,
+        symbol,
+        alertType: 'STOP_LOSS',
+        targetPrice: stopPrice,
+        triggerCondition: `${symbol} <= $${stopPrice.toFixed(2)} (Stop Loss)`,
+        createdAt: now.toISOString(),
+        expiresAt,
+        status: 'ACTIVE',
+        currentPriceAtCreation: currentPrice,
+        sourceSkill: 'trader-alerts (Jakeschincariol/day-trader-skill)',
+        notes: `Trade plan stop loss alert at $${stopPrice.toFixed(2)}`,
+      },
+      {
+        id: `gt-alert-${Date.now()}-target`,
+        symbol,
+        alertType: 'PROFIT_TARGET',
+        targetPrice,
+        triggerCondition: `${symbol} >= $${targetPrice.toFixed(2)} (Profit Target)`,
+        createdAt: now.toISOString(),
+        expiresAt,
+        status: 'ACTIVE',
+        currentPriceAtCreation: currentPrice,
+        sourceSkill: 'trader-alerts (Jakeschincariol/day-trader-skill)',
+        notes: `Trade plan profit target alert at $${targetPrice.toFixed(2)}`,
+      },
+      {
+        id: `gt-alert-${Date.now()}-flat`,
+        symbol,
+        alertType: 'FLAT_BY_CLOSE',
+        triggerCondition: `${closeTimeEt} ET Mandatory Flatten (Avoid Assignment)`,
+        createdAt: now.toISOString(),
+        expiresAt,
+        status: 'ACTIVE',
+        currentPriceAtCreation: currentPrice,
+        sourceSkill: 'trader-alerts (Jakeschincariol/day-trader-skill)',
+        notes: `Close all positions before the bell at ${closeTimeEt} ET`,
+      },
+    ];
+
+    setDayTraderAlerts((prev) => [...triad, ...prev]);
+    setTotalAlertsCreatedCount((prev) => prev + 3);
+
+    pushNotification(
+      'ENTRY_SIGNAL',
+      'SUCCESS',
+      `GitHub Day Trader Alert Triad Created (${symbol})`,
+      `Created 3 synchronized alerts: Stop @ $${stopPrice.toFixed(2)}, Target @ $${targetPrice.toFixed(2)}, and ${closeTimeEt} ET Flatten. Clear in 2 days.`
+    );
+  };
+
+  const deleteDayTraderAlert = (id: string) => {
+    setDayTraderAlerts((prev) => prev.filter((a) => a.id !== id));
+  };
+
+  // Routine to clear alerts older than 2 days (48 hours)
+  const clearExpiredAlerts = (): number => {
+    const nowMs = Date.now();
+    let purgedCount = 0;
+    setDayTraderAlerts((prev) => {
+      const remaining = prev.filter((alert) => {
+        const isExpired = new Date(alert.expiresAt).getTime() <= nowMs;
+        if (isExpired) purgedCount += 1;
+        return !isExpired;
+      });
+      return remaining;
+    });
+    return purgedCount;
+  };
+
+  const clearAllDayTraderAlerts = () => {
+    setDayTraderAlerts([]);
+  };
+
+  // Background check: purge alerts that have exceeded the 2-day lifespan every 5 minutes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const purged = clearExpiredAlerts();
+      if (purged > 0) {
+        pushNotification(
+          'ENTRY_SIGNAL',
+          'INFO',
+          'Cleaned 2-Day Expired Alerts',
+          `Auto-purged ${purged} GitHub alert(s) that reached their 48-hour expiration window.`
+        );
+      }
+    }, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Compute remaining daily allowance based on dailyAllowanceUsd and today's drawdown
   const todayDrawdown = Math.max(
     0,
@@ -2469,6 +2664,13 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({
         remainingDailyAllowanceUsd,
         importCsvExecutions,
         importRobinhoodHistoryJson,
+        dayTraderAlerts,
+        totalAlertsCreatedCount,
+        addDayTraderAlert,
+        createTradePlanAlertTriad,
+        deleteDayTraderAlert,
+        clearExpiredAlerts,
+        clearAllDayTraderAlerts,
         notifications,
         markAllNotificationsRead,
         auditLogs,

@@ -9,6 +9,7 @@ export type NavigationSection =
   | 'strategy-lab'
   | 'options-chain'
   | 'screener'
+  | 'github-alerts'
   | 'paper-trading'
   | 'live-trading'
   | 'automation'
@@ -497,4 +498,36 @@ export interface DailyProfitRecord {
   notes: string;
   updatedAt: string;
 }
+
+// ============================================================================
+// GitHub Day Trader Skill Alerts (Jakeschincariol/day-trader-skill)
+// Price, Stop, Target, Bell, and Closing Flat Alerts
+// ============================================================================
+export type DayTraderAlertType =
+  | 'STOP_LOSS'
+  | 'PROFIT_TARGET'
+  | 'FLAT_BY_CLOSE'
+  | 'PRICE_ABOVE'
+  | 'PRICE_BELOW'
+  | 'OPENING_BELL'
+  | 'PERCENT_MOVE';
+
+export type AlertLifecycleStatus = 'ACTIVE' | 'TRIGGERED' | 'EXPIRED' | 'CANCELLED';
+
+export interface DayTraderSkillAlert {
+  id: string;
+  symbol: string;
+  alertType: DayTraderAlertType;
+  targetPrice?: number;
+  triggerCondition: string; // e.g. "Price <= $5940.00" or "NYSE 3:55 PM Flatten"
+  createdAt: string; // ISO 8601
+  expiresAt: string; // ISO 8601 (strictly 48 hours / 2 days from creation)
+  triggeredAt?: string;
+  status: AlertLifecycleStatus;
+  currentPriceAtCreation: number;
+  sourceSkill: string; // 'trader-alerts (Jakeschincariol/day-trader-skill)'
+  notes?: string;
+  notificationSent?: boolean;
+}
+
 

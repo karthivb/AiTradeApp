@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   Activity,
   BarChart3,
+  Bell,
   BookOpen,
   Bot,
   ChevronLeft,
@@ -35,6 +36,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'strategy-lab', label: 'Strategy Lab', icon: FlaskConical, phaseBadge: 'CORE' },
   { id: 'options-chain', label: 'Options Chain', icon: Layers, phaseBadge: 'ANY' },
   { id: 'screener', label: 'Market Screener', icon: Flame, phaseBadge: 'NEW' },
+  { id: 'github-alerts', label: 'Github Alerts', icon: Bell, phaseBadge: 'SKILL' },
   { id: 'paper-trading', label: 'Paper Trading', icon: Cpu, phaseBadge: 'SIM' },
   { id: 'automation', label: 'Automation', icon: Bot },
   { id: 'signals', label: 'Signals', icon: Radio },
@@ -54,6 +56,7 @@ export const Sidebar: React.FC = () => {
     customBuilderLegs,
     riskSettings,
     orders,
+    dayTraderAlerts,
   } = useTrading();
 
   const [collapsed, setCollapsed] = useState(false);
@@ -99,6 +102,8 @@ export const Sidebar: React.FC = () => {
             dynamicBadge = `${customBuilderLegs.length} LEGS`;
           } else if (item.id === 'automation' && pendingOrdersCount > 0) {
             dynamicBadge = pendingOrdersCount;
+          } else if (item.id === 'github-alerts' && dayTraderAlerts.length > 0) {
+            dynamicBadge = `${dayTraderAlerts.length}`;
           }
 
           return (
