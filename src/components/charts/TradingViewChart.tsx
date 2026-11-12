@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  CheckCircle2,
   Columns,
   ExternalLink,
   Maximize,
   Maximize2,
   Minimize2,
+  Search,
   Sliders,
 } from 'lucide-react';
 import { useTrading } from '../../context/TradingContext';
@@ -271,12 +273,17 @@ const SingleTvWidget: React.FC<{
       style: '1',
       locale: 'en',
       enable_publishing: false,
+      allow_symbol_change: true,
       hide_top_toolbar: false,
+      hide_side_toolbar: false,
       hide_legend: false,
       withdateranges: true,
-      save_image: false,
+      save_image: true,
       calendar: false,
       studies: studies,
+      show_popup_button: true,
+      popup_width: '1000',
+      popup_height: '650',
       support_host: 'https://www.tradingview.com',
     });
 
@@ -363,6 +370,39 @@ export const TradingViewChart: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activeSymbol]);
+
+  // Synchronize when the user changes symbol inside the TradingView iframe
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        if (!event.data) return;
+        let payload = event.data;
+        if (typeof payload === 'string' && (payload.startsWith('{') || payload.startsWith('['))) {
+          payload = JSON.parse(payload);
+        }
+        if (payload && typeof payload === 'object') {
+          const rawSymbol =
+            payload.name === 'tv-widget-symbol-change'
+              ? payload.data?.symbol || payload.data
+              : payload.event === 'symbol_change'
+              ? payload.symbol
+              : payload.data?.name || payload.symbol;
+
+          if (typeof rawSymbol === 'string' && rawSymbol.trim()) {
+            const clean = rawSymbol.includes(':') ? rawSymbol.split(':')[1] : rawSymbol;
+            if (clean && clean.toUpperCase() !== activeSymbol) {
+              selectTradingSymbol(clean.toUpperCase());
+            }
+          }
+        }
+      } catch {
+        // Ignore cross-origin non-JSON messages
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [activeSymbol, selectTradingSymbol]);
 
   const currentPreset = SYMBOL_PRESETS.find((p) => p.symbol === activeSymbol);
   const tvSymbol = currentPreset
@@ -659,6 +699,21 @@ export const TradingViewChart: React.FC = () => {
           >
             VWAP {showVWAP ? '✓' : ''}
           </button>
+        </div>
+      </div>
+
+      {/* In-Iframe Symbol Change Tip & Status Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#26D6A0]/25 bg-[#26D6A0]/5 px-3 py-1.5 text-xs">
+        <div className="flex items-center gap-2">
+          <span className="flex h-2 w-2 rounded-full bg-[#26D6A0] animate-pulse" />
+          <span className="font-semibold text-white">In-Chart Symbol Search Enabled:</span>
+          <span className="text-[#9BAFC4]">
+            Click the active ticker symbol ({activeSymbol}) in the top-left toolbar inside the TradingView chart to search and switch stocks directly inside the iframe.
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 text-[11px] font-mono text-[#26D6A0]">
+          <Search className="h-3.5 w-3.5" />
+          <span>Iframe Symbol Selector: Active</span>
         </div>
       </div>
 
