@@ -199,8 +199,22 @@ const SingleTvWidget: React.FC<{
   showBB: boolean;
   showMACD: boolean;
   showVWAP: boolean;
+  showRSI: boolean;
+  showSupertrend: boolean;
+  showADX: boolean;
   height: string | number;
-}> = ({ tvSymbol, interval, theme, showBB, showMACD, showVWAP, height }) => {
+}> = ({
+  tvSymbol,
+  interval,
+  theme,
+  showBB,
+  showMACD,
+  showVWAP,
+  showRSI,
+  showSupertrend,
+  showADX,
+  height,
+}) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -212,6 +226,9 @@ const SingleTvWidget: React.FC<{
     if (showBB) studies.push('STD;Bollinger_Bands');
     if (showMACD) studies.push('STD;MACD');
     if (showVWAP) studies.push('STD;VWAP');
+    if (showRSI) studies.push('STD;RSI');
+    if (showSupertrend) studies.push('STD;Supertrend');
+    if (showADX) studies.push('STD;Average_Directional_Index');
 
     const widgetContainer = document.createElement('div');
     widgetContainer.className = 'tradingview-widget-container__widget';
@@ -247,7 +264,18 @@ const SingleTvWidget: React.FC<{
     return () => {
       if (el) el.innerHTML = '';
     };
-  }, [tvSymbol, interval, theme, showBB, showMACD, showVWAP, height]);
+  }, [
+    tvSymbol,
+    interval,
+    theme,
+    showBB,
+    showMACD,
+    showVWAP,
+    showRSI,
+    showSupertrend,
+    showADX,
+    height,
+  ]);
 
   return (
     <div
@@ -269,10 +297,13 @@ export const TradingViewChart: React.FC = () => {
   const [showBB, setShowBB] = useState<boolean>(true);
   const [showMACD, setShowMACD] = useState<boolean>(true);
   const [showVWAP, setShowVWAP] = useState<boolean>(false);
+  const [showRSI, setShowRSI] = useState<boolean>(true);
+  const [showSupertrend, setShowSupertrend] = useState<boolean>(false);
+  const [showADX, setShowADX] = useState<boolean>(false);
   const [customInput, setCustomInput] = useState<string>('');
 
-  // 3-way height mode: NORMAL (380px) -> HALF_EXPANDED (560px) -> FULLSCREEN (fixed overlay or 820px)
-  const [chartViewMode, setChartViewMode] = useState<'NORMAL' | 'HALF' | 'FULL'>('HALF');
+  // 4-way height mode: NORMAL (520px) -> EXPANDED (680px) -> TALL (840px) -> FULLSCREEN (100vh)
+  const [chartViewMode, setChartViewMode] = useState<'NORMAL' | 'EXPANDED' | 'TALL' | 'FULL'>('EXPANDED');
 
   // Next Symbol quick cycling (Hotkey 'n' support)
   const cycleNextSymbol = () => {
@@ -300,7 +331,7 @@ export const TradingViewChart: React.FC = () => {
         cycleNextSymbol();
       } else if (e.key === 'f' || e.key === 'F') {
         e.preventDefault();
-        setChartViewMode((prev) => (prev === 'FULL' ? 'HALF' : 'FULL'));
+        setChartViewMode((prev) => (prev === 'FULL' ? 'EXPANDED' : 'FULL'));
       }
     };
 
@@ -315,7 +346,26 @@ export const TradingViewChart: React.FC = () => {
       ? activeSymbol
       : `NASDAQ:${activeSymbol}`;
 
-  const chartHeight = chartViewMode === 'FULL' ? 'calc(100vh - 140px)' : chartViewMode === 'HALF' ? 560 : 380;
+  // USER REQUEST: Split chart no showing long height. Also regular chart also should be in better height to display.
+  // We provide generous, professional trading heights: Normal: 520px, Expanded: 680px, Tall: 840px, Full: calc(100vh - 120px)
+  const chartHeight =
+    chartViewMode === 'FULL'
+      ? 'calc(100vh - 130px)'
+      : chartViewMode === 'TALL'
+      ? 840
+      : chartViewMode === 'EXPANDED'
+      ? 680
+      : 520;
+
+  // For Split view (1m + Daily side-by-side), ensure ample vertical headroom so indicators like RSI, Supertrend, ADX, and BB all fit comfortably
+  const splitChartHeight =
+    chartViewMode === 'FULL'
+      ? 'calc(100vh - 150px)'
+      : chartViewMode === 'TALL'
+      ? 800
+      : chartViewMode === 'EXPANDED'
+      ? 650
+      : 520;
 
   const handleCustomSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -388,9 +438,9 @@ export const TradingViewChart: React.FC = () => {
           </form>
         </div>
 
-        {/* View Height Controls: Compact / Half / Fullscreen */}
+        {/* View Height Controls: Normal (520px) / Expanded (680px) / Tall (840px) / Fullscreen */}
         <div className="flex items-center gap-2">
-          {/* Half / Fullscreen Toggle Segment */}
+          {/* Height Segment */}
           <div className="flex items-center rounded-xl border border-[#1E2D45] bg-[#0B1220] p-1">
             <button
               type="button"
@@ -400,25 +450,37 @@ export const TradingViewChart: React.FC = () => {
                   ? 'bg-[#26D6A0] text-[#0B1220]'
                   : 'text-[#9BAFC4] hover:text-white'
               }`}
-              title="Standard Compact Height (380px)"
+              title="Standard View (520px)"
             >
-              Compact
+              520px
             </button>
             <button
               type="button"
-              onClick={() => setChartViewMode('HALF')}
+              onClick={() => setChartViewMode('EXPANDED')}
               className={`rounded-lg px-2.5 py-1 text-xs font-bold transition ${
-                chartViewMode === 'HALF'
+                chartViewMode === 'EXPANDED'
                   ? 'bg-[#26D6A0] text-[#0B1220]'
                   : 'text-[#9BAFC4] hover:text-white'
               }`}
-              title="Half-Page View (560px)"
+              title="Expanded Height View (680px)"
             >
-              Half
+              680px
             </button>
             <button
               type="button"
-              onClick={() => setChartViewMode(chartViewMode === 'FULL' ? 'HALF' : 'FULL')}
+              onClick={() => setChartViewMode('TALL')}
+              className={`rounded-lg px-2.5 py-1 text-xs font-bold transition ${
+                chartViewMode === 'TALL'
+                  ? 'bg-[#26D6A0] text-[#0B1220]'
+                  : 'text-[#9BAFC4] hover:text-white'
+              }`}
+              title="Tall Multi-Indicator Height View (840px)"
+            >
+              840px
+            </button>
+            <button
+              type="button"
+              onClick={() => setChartViewMode(chartViewMode === 'FULL' ? 'EXPANDED' : 'FULL')}
               className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold transition ${
                 chartViewMode === 'FULL'
                   ? 'bg-[#26D6A0] text-[#0B1220]'
@@ -499,10 +561,46 @@ export const TradingViewChart: React.FC = () => {
           </button>
         </div>
 
-        {/* Pre-Loaded Indicators Toggle (BB + MACD On by Default) */}
+        {/* Pre-Loaded Indicators Toggle (BB, MACD, RSI, Supertrend, ADX, VWAP) */}
         <div className="flex flex-wrap items-center gap-1.5">
           <Sliders className="h-3.5 w-3.5 text-[#26D6A0] mr-0.5" />
           <span className="text-[#9BAFC4] font-semibold">Indicators:</span>
+          <button
+            type="button"
+            onClick={() => setShowRSI(!showRSI)}
+            className={`rounded-lg px-2.5 py-1 font-mono text-xs font-bold transition ${
+              showRSI
+                ? 'bg-[#26D6A0] text-[#0B1220] shadow-sm'
+                : 'border border-[#1E2D45] bg-[#0B1220] text-[#9BAFC4] hover:text-white'
+            }`}
+            title="Toggle Relative Strength Index (RSI)"
+          >
+            RSI {showRSI ? '✓' : ''}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowSupertrend(!showSupertrend)}
+            className={`rounded-lg px-2.5 py-1 font-mono text-xs font-bold transition ${
+              showSupertrend
+                ? 'bg-[#26D6A0] text-[#0B1220] shadow-sm'
+                : 'border border-[#1E2D45] bg-[#0B1220] text-[#9BAFC4] hover:text-white'
+            }`}
+            title="Toggle Supertrend ATR Volatility Overlay"
+          >
+            Supertrend {showSupertrend ? '✓' : ''}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowADX(!showADX)}
+            className={`rounded-lg px-2.5 py-1 font-mono text-xs font-bold transition ${
+              showADX
+                ? 'bg-[#26D6A0] text-[#0B1220] shadow-sm'
+                : 'border border-[#1E2D45] bg-[#0B1220] text-[#9BAFC4] hover:text-white'
+            }`}
+            title="Toggle Average Directional Index (ADX Trend Strength)"
+          >
+            ADX {showADX ? '✓' : ''}
+          </button>
           <button
             type="button"
             onClick={() => setShowBB(!showBB)}
@@ -512,7 +610,7 @@ export const TradingViewChart: React.FC = () => {
                 : 'border border-[#1E2D45] bg-[#0B1220] text-[#9BAFC4]'
             }`}
           >
-            BB (Bollinger Bands) {showBB ? '✓' : ''}
+            BB {showBB ? '✓' : ''}
           </button>
           <button
             type="button"
@@ -539,14 +637,14 @@ export const TradingViewChart: React.FC = () => {
         </div>
       </div>
 
-      {/* Row 3: Live TradingView Chart(s) */}
+      {/* Row 3: Live TradingView Chart(s) with Generous Viewing Headroom */}
       {dualDailyAnd1m ? (
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           <div>
             <div className="mb-1.5 flex items-center justify-between text-xs font-bold text-[#26D6A0]">
-              <span>{activeSymbol} — 1-Minute Intraday (BB + MACD)</span>
+              <span>{activeSymbol} — 1-Minute Intraday (Execution View)</span>
               <span className="font-mono text-[11px] text-[#9BAFC4]">
-                1m Execution View
+                Height: {typeof splitChartHeight === 'number' ? `${splitChartHeight}px` : splitChartHeight}
               </span>
             </div>
             <SingleTvWidget
@@ -556,14 +654,17 @@ export const TradingViewChart: React.FC = () => {
               showBB={showBB}
               showMACD={showMACD}
               showVWAP={showVWAP}
-              height={chartHeight}
+              showRSI={showRSI}
+              showSupertrend={showSupertrend}
+              showADX={showADX}
+              height={splitChartHeight}
             />
           </div>
           <div>
             <div className="mb-1.5 flex items-center justify-between text-xs font-bold text-[#F59E0B]">
-              <span>{activeSymbol} — Daily Timeframe (BB + MACD)</span>
+              <span>{activeSymbol} — Daily Timeframe (Macro Trend & Levels)</span>
               <span className="font-mono text-[11px] text-[#9BAFC4]">
-                Daily Trend & Key Levels
+                Height: {typeof splitChartHeight === 'number' ? `${splitChartHeight}px` : splitChartHeight}
               </span>
             </div>
             <SingleTvWidget
@@ -573,7 +674,10 @@ export const TradingViewChart: React.FC = () => {
               showBB={showBB}
               showMACD={showMACD}
               showVWAP={showVWAP}
-              height={chartHeight}
+              showRSI={showRSI}
+              showSupertrend={showSupertrend}
+              showADX={showADX}
+              height={splitChartHeight}
             />
           </div>
         </div>
@@ -585,6 +689,9 @@ export const TradingViewChart: React.FC = () => {
           showBB={showBB}
           showMACD={showMACD}
           showVWAP={showVWAP}
+          showRSI={showRSI}
+          showSupertrend={showSupertrend}
+          showADX={showADX}
           height={chartHeight}
         />
       )}
