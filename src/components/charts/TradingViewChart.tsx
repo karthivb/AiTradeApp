@@ -228,12 +228,12 @@ const SingleTvWidget: React.FC<{
     el.innerHTML = '';
 
     const studies: (string | object)[] = [];
-    if (showBB) studies.push('STD;Bollinger_Bands');
-    if (showMACD) studies.push('STD;MACD');
-    if (showVWAP) studies.push('STD;VWAP');
-    if (showRSI) studies.push('STD;RSI');
-    if (showSupertrend) studies.push('STD;Supertrend');
-    if (showADX) studies.push('STD;Average_Directional_Index');
+    if (showBB) studies.push('BB@tv-basicstudies');
+    if (showMACD) studies.push('MACD@tv-basicstudies');
+    if (showVWAP) studies.push('VWAP@tv-basicstudies');
+    if (showRSI) studies.push('RSI@tv-basicstudies');
+    if (showSupertrend) studies.push('VSTOP@tv-basicstudies');
+    if (showADX) studies.push('DM@tv-basicstudies');
 
     // 9, 21, 200 Exponential Moving Averages for Crossover Trading
     if (showEMA) {
@@ -276,19 +276,20 @@ const SingleTvWidget: React.FC<{
     el.appendChild(tvStyle);
 
     // Thick line styles and high-contrast colors for 9/21/200 EMA Cross
-    const studiesOverrides: Record<string, string | number> = {
+    const studiesOverrides: Record<string, string | number> = {};
+    if (showEMA) {
       // General thick line override
-      'moving average exponential.plot.linewidth': 3,
+      studiesOverrides['moving average exponential.plot.linewidth'] = 3;
       // 9 EMA: Fast trigger line in high-vis Emerald Green (width: 3)
-      'moving average exponential.0.plot.linewidth': 3,
-      'moving average exponential.0.plot.color': '#00E676',
+      studiesOverrides['moving average exponential.0.plot.linewidth'] = 3;
+      studiesOverrides['moving average exponential.0.plot.color'] = '#00E676';
       // 21 EMA: Trend pullback / baseline in bright Amber/Gold (width: 3)
-      'moving average exponential.1.plot.linewidth': 3,
-      'moving average exponential.1.plot.color': '#FFB300',
+      studiesOverrides['moving average exponential.1.plot.linewidth'] = 3;
+      studiesOverrides['moving average exponential.1.plot.color'] = '#FFB300';
       // 200 EMA: Macro institutional bull/bear line in Vivid Neon Purple (width: 4)
-      'moving average exponential.2.plot.linewidth': 4,
-      'moving average exponential.2.plot.color': '#E040FB',
-    };
+      studiesOverrides['moving average exponential.2.plot.linewidth'] = 4;
+      studiesOverrides['moving average exponential.2.plot.color'] = '#E040FB';
+    }
 
     const script = document.createElement('script');
     script.src =
@@ -314,7 +315,9 @@ const SingleTvWidget: React.FC<{
       save_image: true,
       calendar: false,
       studies: studies,
-      studies_overrides: studiesOverrides,
+      ...(Object.keys(studiesOverrides).length > 0
+        ? { studies_overrides: studiesOverrides }
+        : {}),
       show_popup_button: true,
       popup_width: '1000',
       popup_height: '650',
@@ -340,9 +343,21 @@ const SingleTvWidget: React.FC<{
     heightPx,
   ]);
 
+  const studiesFingerprint = [
+    showBB ? 'bb' : '',
+    showMACD ? 'macd' : '',
+    showVWAP ? 'vwap' : '',
+    showRSI ? 'rsi' : '',
+    showSupertrend ? 'supertrend' : '',
+    showADX ? 'adx' : '',
+    showEMA ? 'ema' : '',
+  ]
+    .filter(Boolean)
+    .join('-');
+
   return (
     <div
-      key={`tv-widget-${tvSymbol}-${interval}-${heightPx}-${showEMA ? 'ema' : 'noema'}`}
+      key={`tv-widget-${tvSymbol}-${interval}-${heightPx}-${studiesFingerprint}`}
       ref={containerRef}
       className="tradingview-widget-container w-full overflow-hidden rounded-xl border border-[#1E2D45]"
       style={{
@@ -803,6 +818,51 @@ export const TradingViewChart: React.FC = () => {
             Click symbol in chart ({activeSymbol}) to search
           </span>
         </div>
+      </div>
+
+      {/* Active Indicators Pill Tray */}
+      <div className="flex flex-wrap items-center gap-1.5 px-1 text-xs">
+        <span className="text-[11px] font-bold text-[#9BAFC4]">Active Chart Indicators:</span>
+        {showEMA9_21_200 && (
+          <span className="rounded bg-[#00E676]/15 border border-[#00E676]/40 px-2 py-0.5 text-[11px] font-mono font-bold text-[#00E676]">
+            EMA 9/21/200 (3px/4px)
+          </span>
+        )}
+        {showRSI && (
+          <span className="rounded bg-[#26D6A0]/15 border border-[#26D6A0]/40 px-2 py-0.5 text-[11px] font-mono font-bold text-[#26D6A0]">
+            RSI (14)
+          </span>
+        )}
+        {showMACD && (
+          <span className="rounded bg-[#26D6A0]/15 border border-[#26D6A0]/40 px-2 py-0.5 text-[11px] font-mono font-bold text-[#26D6A0]">
+            MACD (12, 26, 9)
+          </span>
+        )}
+        {showBB && (
+          <span className="rounded bg-[#26D6A0]/15 border border-[#26D6A0]/40 px-2 py-0.5 text-[11px] font-mono font-bold text-[#26D6A0]">
+            Bollinger Bands (20, 2)
+          </span>
+        )}
+        {showVWAP && (
+          <span className="rounded bg-[#26D6A0]/15 border border-[#26D6A0]/40 px-2 py-0.5 text-[11px] font-mono font-bold text-[#26D6A0]">
+            VWAP
+          </span>
+        )}
+        {showSupertrend && (
+          <span className="rounded bg-[#26D6A0]/15 border border-[#26D6A0]/40 px-2 py-0.5 text-[11px] font-mono font-bold text-[#26D6A0]">
+            Supertrend / Volatility Stop
+          </span>
+        )}
+        {showADX && (
+          <span className="rounded bg-[#26D6A0]/15 border border-[#26D6A0]/40 px-2 py-0.5 text-[11px] font-mono font-bold text-[#26D6A0]">
+            ADX / Directional Movement
+          </span>
+        )}
+        {!showEMA9_21_200 && !showRSI && !showMACD && !showBB && !showVWAP && !showSupertrend && !showADX && (
+          <span className="text-[11px] text-[#9BAFC4] italic">
+            None selected (Click indicator buttons above or 'fx' in chart toolbar)
+          </span>
+        )}
       </div>
 
       {/* Row 3: Live TradingView Chart(s) with Generous Viewing Headroom */}
