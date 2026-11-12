@@ -521,7 +521,8 @@ export interface DayTraderSkillAlert {
   targetPrice?: number;
   triggerCondition: string; // e.g. "Price <= $5940.00" or "NYSE 3:55 PM Flatten"
   createdAt: string; // ISO 8601
-  expiresAt: string; // ISO 8601 (strictly 48 hours / 2 days from creation)
+  expiresAt: string; // ISO 8601 (Customizable: 2 days, 7 days, 14 days, 30 days, or Never)
+  retentionDays?: number; // Configurable lifespan: 2, 7, 14, 30, or 9999
   triggeredAt?: string;
   status: AlertLifecycleStatus;
   currentPriceAtCreation: number;

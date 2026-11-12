@@ -216,6 +216,7 @@ const SingleTvWidget: React.FC<{
   height,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const heightPx = typeof height === 'number' ? `${height}px` : height;
 
   useEffect(() => {
     const el = containerRef.current;
@@ -230,11 +231,29 @@ const SingleTvWidget: React.FC<{
     if (showSupertrend) studies.push('STD;Supertrend');
     if (showADX) studies.push('STD;Average_Directional_Index');
 
+    const uniqueId = `tv-${Math.random().toString(36).substring(2, 9)}`;
     const widgetContainer = document.createElement('div');
+    widgetContainer.id = uniqueId;
     widgetContainer.className = 'tradingview-widget-container__widget';
-    widgetContainer.style.height = typeof height === 'number' ? `${height}px` : height;
+    widgetContainer.style.height = heightPx;
+    widgetContainer.style.minHeight = heightPx;
     widgetContainer.style.width = '100%';
     el.appendChild(widgetContainer);
+
+    // Force internal widget elements and iframe to fill specified height
+    const tvStyle = document.createElement('style');
+    tvStyle.innerHTML = `
+      #${uniqueId},
+      #${uniqueId} iframe,
+      .tradingview-widget-container,
+      .tradingview-widget-container__widget,
+      .tradingview-widget-container iframe {
+        height: ${heightPx} !important;
+        min-height: ${heightPx} !important;
+        max-height: ${heightPx} !important;
+      }
+    `;
+    el.appendChild(tvStyle);
 
     const script = document.createElement('script');
     script.src =
@@ -242,7 +261,9 @@ const SingleTvWidget: React.FC<{
     script.type = 'text/javascript';
     script.async = true;
     script.innerHTML = JSON.stringify({
-      autosize: true,
+      autosize: false,
+      width: '100%',
+      height: typeof height === 'number' ? height : parseInt(String(height)) || 680,
       symbol: tvSymbol,
       interval: interval,
       timezone: 'America/New_York',
@@ -274,14 +295,18 @@ const SingleTvWidget: React.FC<{
     showRSI,
     showSupertrend,
     showADX,
-    height,
+    heightPx,
   ]);
 
   return (
     <div
+      key={`tv-widget-${tvSymbol}-${interval}-${heightPx}`}
       ref={containerRef}
       className="tradingview-widget-container w-full overflow-hidden rounded-xl border border-[#1E2D45]"
-      style={{ height: typeof height === 'number' ? `${height}px` : height }}
+      style={{
+        height: heightPx,
+        minHeight: heightPx,
+      }}
     />
   );
 };

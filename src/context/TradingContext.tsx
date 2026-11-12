@@ -200,8 +200,8 @@ interface TradingContextValue {
   // GitHub Day Trader Skill Alerts (Jakeschincariol/day-trader-skill)
   dayTraderAlerts: DayTraderSkillAlert[];
   totalAlertsCreatedCount: number;
-  addDayTraderAlert: (alertInput: Omit<DayTraderSkillAlert, 'id' | 'createdAt' | 'expiresAt' | 'status' | 'sourceSkill'>) => void;
-  createTradePlanAlertTriad: (symbol: string, stopPrice: number, targetPrice: number, closeTimeEt?: string) => void;
+  addDayTraderAlert: (alertInput: Omit<DayTraderSkillAlert, 'id' | 'createdAt' | 'expiresAt' | 'status' | 'sourceSkill'> & { retentionDays?: number }) => void;
+  createTradePlanAlertTriad: (symbol: string, stopPrice: number, targetPrice: number, closeTimeEt?: string, retentionDays?: number) => void;
   deleteDayTraderAlert: (id: string) => void;
   clearExpiredAlerts: () => number;
   clearAllDayTraderAlerts: () => void;
@@ -930,7 +930,7 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({
   ]);
 
   // GitHub Day Trader Skill Alerts State (Jakeschincariol/day-trader-skill)
-  // Tracks created alerts and automatically purges alerts older than 2 days (48 hours)
+  // Tracks created alerts and automatically purges alerts when their retention window passes (configurable > 2 days)
   const [totalAlertsCreatedCount, setTotalAlertsCreatedCount] = useState<number>(3);
   const [dayTraderAlerts, setDayTraderAlerts] = useState<DayTraderSkillAlert[]>([
     {
@@ -940,7 +940,8 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({
       targetPrice: 5960,
       triggerCondition: 'SPX <= $5960.00 (-20% Trade Stop)',
       createdAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 42).toISOString(),
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(),
+      retentionDays: 7,
       status: 'ACTIVE',
       currentPriceAtCreation: 5978.4,
       sourceSkill: 'trader-alerts (Jakeschincariol/day-trader-skill)',
@@ -953,7 +954,8 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({
       targetPrice: 6010,
       triggerCondition: 'SPX >= $6010.00 (+30% Profit Target)',
       createdAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 42).toISOString(),
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(),
+      retentionDays: 7,
       status: 'ACTIVE',
       currentPriceAtCreation: 5978.4,
       sourceSkill: 'trader-alerts (Jakeschincariol/day-trader-skill)',
@@ -965,7 +967,8 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({
       alertType: 'FLAT_BY_CLOSE',
       triggerCondition: '3:55 PM ET Mandatory Flatten Alert',
       createdAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 42).toISOString(),
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(),
+      retentionDays: 7,
       status: 'ACTIVE',
       currentPriceAtCreation: 5978.4,
       sourceSkill: 'trader-alerts (Jakeschincariol/day-trader-skill)',
@@ -2444,12 +2447,14 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({
   // Automatically tracks total alerts and clears alerts after 2 days (48 hours)
   // ============================================================================
   const addDayTraderAlert = (
-    alertInput: Omit<DayTraderSkillAlert, 'id' | 'createdAt' | 'expiresAt' | 'status' | 'sourceSkill'>
+    alertInput: Omit<DayTraderSkillAlert, 'id' | 'createdAt' | 'expiresAt' | 'status' | 'sourceSkill'> & { retentionDays?: number }
   ) => {
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString(); // Strictly 2 days / 48h
+    const days = alertInput.retentionDays || 7;
+    const expiresAt = new Date(now.getTime() + days * 24 * 60 * 60 * 1000).toISOString();
     const newAlert: DayTraderSkillAlert = {
       ...alertInput,
+      retentionDays: days,
       id: `gt-alert-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       createdAt: now.toISOString(),
       expiresAt,
@@ -2464,7 +2469,7 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({
       'ENTRY_SIGNAL',
       'INFO',
       `GitHub Alert Created: ${newAlert.symbol} (${newAlert.alertType})`,
-      `${newAlert.triggerCondition} • Auto-expires in 2 days on ${new Date(expiresAt).toLocaleDateString()}`
+      `${newAlert.triggerCondition} • Retention: ${days} days (Expires ${new Date(expiresAt).toLocaleDateString()})`
     );
   };
 
@@ -2473,10 +2478,11 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({
     symbol: string,
     stopPrice: number,
     targetPrice: number,
-    closeTimeEt: string = '15:55'
+    closeTimeEt: string = '15:55',
+    retentionDays: number = 7
   ) => {
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString();
+    const expiresAt = new Date(now.getTime() + retentionDays * 24 * 60 * 60 * 1000).toISOString();
     const currentPrice = market.spotPrice;
 
     const triad: DayTraderSkillAlert[] = [
@@ -2488,6 +2494,7 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({
         triggerCondition: `${symbol} <= $${stopPrice.toFixed(2)} (Stop Loss)`,
         createdAt: now.toISOString(),
         expiresAt,
+        retentionDays,
         status: 'ACTIVE',
         currentPriceAtCreation: currentPrice,
         sourceSkill: 'trader-alerts (Jakeschincariol/day-trader-skill)',
@@ -2501,6 +2508,7 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({
         triggerCondition: `${symbol} >= $${targetPrice.toFixed(2)} (Profit Target)`,
         createdAt: now.toISOString(),
         expiresAt,
+        retentionDays,
         status: 'ACTIVE',
         currentPriceAtCreation: currentPrice,
         sourceSkill: 'trader-alerts (Jakeschincariol/day-trader-skill)',
@@ -2513,6 +2521,7 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({
         triggerCondition: `${closeTimeEt} ET Mandatory Flatten (Avoid Assignment)`,
         createdAt: now.toISOString(),
         expiresAt,
+        retentionDays,
         status: 'ACTIVE',
         currentPriceAtCreation: currentPrice,
         sourceSkill: 'trader-alerts (Jakeschincariol/day-trader-skill)',
@@ -2527,7 +2536,7 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({
       'ENTRY_SIGNAL',
       'SUCCESS',
       `GitHub Day Trader Alert Triad Created (${symbol})`,
-      `Created 3 synchronized alerts: Stop @ $${stopPrice.toFixed(2)}, Target @ $${targetPrice.toFixed(2)}, and ${closeTimeEt} ET Flatten. Clear in 2 days.`
+      `Created 3 synchronized alerts: Stop @ $${stopPrice.toFixed(2)}, Target @ $${targetPrice.toFixed(2)}, and ${closeTimeEt} ET Flatten. (Retention: ${retentionDays} days)`
     );
   };
 
