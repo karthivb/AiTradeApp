@@ -22,6 +22,11 @@ import {
 } from 'lucide-react';
 import { useTrading } from '../context/TradingContext';
 import { DisciplineMood, JournalEntry } from '../types/trading';
+import {
+  getMarketHolidayName,
+  getMonthMarketSchedule,
+  getYearMarketSchedule,
+} from '../lib/marketHolidays';
 
 const SAMPLE_MULTI_LEG_CSV = `order_group_id,trade_date,symbol,option_type,strike,expiration,contracts,entry_price,exit_price,fees,strategy,notes
 ORD-CSV-501,2026-11-09,SPX,CALL,5980,2026-11-09,2,9.20,12.40,1.30,Bull Call Debit Spread,Long ATM leg execution
@@ -53,6 +58,7 @@ export const JournalPage: React.FC = () => {
 
   // Hypothetical Consistency Parameters
   const [targetBaseHitPerDay, setTargetBaseHitPerDay] = useState<number>(200); // e.g. $200 / day base hit
+  const [customConsistencyTarget, setCustomConsistencyTarget] = useState<number>(250);
   const [estimatedWinRatePct, setEstimatedWinRatePct] = useState<number>(80); // 80% disciplined win rate
   const [averageLossPerDay, setAverageLossPerDay] = useState<number>(100); // Strict stop loss
   const [strictSingleContractRule, setStrictSingleContractRule] = useState<boolean>(true);
@@ -185,6 +191,11 @@ export const JournalPage: React.FC = () => {
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const monthName = new Date(currentYear, currentMonth, 1).toLocaleString('default', { month: 'long' });
 
+  // Market Holidays & Future Available Open Market Days (excluding weekends & NYSE/NASDAQ holidays)
+  const monthSchedule = getMonthMarketSchedule(currentYear, currentMonth, today);
+  const currentYearNumber = today.getFullYear();
+  const yearSchedule = getYearMarketSchedule(currentYearNumber, today);
+
   // P&L lookup by Date string YYYY-MM-DD
   const getDayMetrics = (dayNum: number) => {
     const formatted = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
@@ -201,15 +212,18 @@ export const JournalPage: React.FC = () => {
   // Month Totals
   let monthGreenDays = 0;
   let monthRedDays = 0;
+  let monthLoggedDays = 0;
   let monthTotalPnl = 0;
   for (let d = 1; d <= daysInMonth; d++) {
     const { totalNet, hasData } = getDayMetrics(d);
     if (hasData) {
+      monthLoggedDays++;
       monthTotalPnl += totalNet;
       if (totalNet > 0) monthGreenDays++;
       else if (totalNet < 0) monthRedDays++;
     }
   }
+  const actualDailyAvg = monthLoggedDays > 0 ? monthTotalPnl / monthLoggedDays : 0;
 
   // Hypothetical Consistency Calculations
   // Trading days per month = ~21 days. Trading days per year = ~252 days.
@@ -243,7 +257,17 @@ export const JournalPage: React.FC = () => {
               <p className="mt-1 text-xs text-[#9BAFC4] leading-relaxed">
                 <strong className="text-white">Golden Consistency Rule:</strong>{' '}
                 <span className="text-[#26D6A0] font-bold">1. Trade ONLY 1 contract.</span> Never oversize. Base hits build accounts. <br />
-                <span className="text-[#F59E0B] font-bold">2. STOP TRADING at 8:30 AM PT (11:30 AM ET).</span> If you are green, lock it and walk away. If you miss the morning move, <span className="underline font-bold text-[#EF4444]">DO NOT CHOP</span> through lunch—wait for the <strong>Afternoon Power Hour (12:30 PM – 1:45 PM PT / 3:30 PM – 3:45 PM ET)</strong>.
+                <span className="inline-block rounded bg-[#22C55E]/15 border border-[#22C55E]/40 px-1.5 py-0.5 text-[#22C55E] font-bold">
+                  ⚡ Power Hour 1 (First 2h): 6:30–8:30 AM PT
+                </span>{' '}
+                •{' '}
+                <span className="inline-block rounded bg-[#EF4444]/15 border border-[#EF4444]/40 px-1.5 py-0.5 text-[#EF4444] font-bold">
+                  🚫 STRICT STAY AWAY: 9:00–11:00 AM PT (12:00–2:00 PM ET)
+                </span>{' '}
+                •{' '}
+                <span className="inline-block rounded bg-[#26D6A0]/15 border border-[#26D6A0]/40 px-1.5 py-0.5 text-[#26D6A0] font-bold">
+                  ⚡ Power Hour 2 (Last 1h 10m): 11:50 AM–1:00 PM PT
+                </span>
               </p>
             </div>
           </div>
@@ -342,6 +366,38 @@ export const JournalPage: React.FC = () => {
       {/* TAB 1: INTERACTIVE DAILY CALENDAR VIEW */}
       {activeTab === 'CALENDAR_MONTH' && (
         <div className="rounded-2xl border border-[#1E2D45] bg-[#111C2E] p-5 space-y-4">
+          {/* Market Horizon Telemetry */}
+          <div className="rounded-xl border border-[#1E2D45] bg-[#0B1220] p-4">
+            <div className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[#38BDF8]">
+              <span>⏳</span>
+              <span>MARKET HORIZON TELEMETRY</span>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[#9BAFC4]">
+                  TOTAL TRADING DAYS IN REST OF CURRENT MONTH
+                </div>
+                <div className="mt-1 font-mono text-2xl font-extrabold text-[#26D6A0]">
+                  {monthSchedule.futureOpenDays} DAYS
+                </div>
+                <div className="mt-0.5 text-[11px] text-[#9BAFC4]">
+                  {monthName} {currentYear} Sessions Remaining ({monthSchedule.totalOpenDaysInMonth} total in month)
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[#9BAFC4]">
+                  TOTAL TRADING DAYS IN REST OF {currentYearNumber}
+                </div>
+                <div className="mt-1 font-mono text-2xl font-extrabold text-[#38BDF8]">
+                  {yearSchedule.futureOpenDays} DAYS
+                </div>
+                <div className="mt-0.5 text-[11px] text-[#9BAFC4]">
+                  Plenty of trading sessions left. Never rush or force trades.
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Calendar Header with Month Controls */}
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1E2D45] pb-3">
             <div className="flex items-center gap-3">
@@ -376,8 +432,14 @@ export const JournalPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Monthly Summary Badges */}
-            <div className="flex flex-wrap items-center gap-3 text-xs">
+            {/* Monthly Summary & Open Market Days Badges */}
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="rounded-xl border border-[#26D6A0]/40 bg-[#26D6A0]/15 px-3 py-1 font-mono font-bold text-[#26D6A0]">
+                📅 {monthName}: {monthSchedule.totalOpenDaysInMonth} Open Days ({monthSchedule.futureOpenDays} Future)
+              </span>
+              <span className="rounded-xl border border-[#38BDF8]/40 bg-[#38BDF8]/15 px-3 py-1 font-mono font-bold text-[#38BDF8]">
+                📆 {currentYearNumber}: {yearSchedule.totalOpenDaysInYear} Open Days ({yearSchedule.futureOpenDays} Future)
+              </span>
               <span className="rounded-xl border border-[#22C55E]/40 bg-[#22C55E]/15 px-3 py-1 font-mono font-bold text-[#22C55E]">
                 🟢 {monthGreenDays} Green Days
               </span>
@@ -391,6 +453,63 @@ export const JournalPage: React.FC = () => {
                   : 0}
                 %
               </span>
+            </div>
+          </div>
+
+          {/* Market Schedule Strip: Future Available Market Open Days (Month & Current Year) + Holidays */}
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div className="rounded-xl border border-[#26D6A0]/30 bg-[#0B1220] px-3.5 py-2.5">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-[#9BAFC4]">
+                Future Open Days ({monthName} {currentYear})
+              </div>
+              <div className="mt-0.5 flex items-baseline justify-between">
+                <span className="font-mono text-lg font-extrabold text-[#26D6A0]">
+                  {monthSchedule.futureOpenDays} days
+                </span>
+                <span className="font-mono text-[11px] text-[#9BAFC4]">
+                  of {monthSchedule.totalOpenDaysInMonth} open • {monthSchedule.holidaysInMonth.length} holiday
+                  {monthSchedule.holidaysInMonth.length === 1 ? '' : 's'}
+                </span>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-[#38BDF8]/30 bg-[#0B1220] px-3.5 py-2.5">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-[#9BAFC4]">
+                Future Open Days ({currentYearNumber} Year)
+              </div>
+              <div className="mt-0.5 flex items-baseline justify-between">
+                <span className="font-mono text-lg font-extrabold text-[#38BDF8]">
+                  {yearSchedule.futureOpenDays} days
+                </span>
+                <span className="font-mono text-[11px] text-[#9BAFC4]">
+                  of {yearSchedule.totalOpenDaysInYear} open • {yearSchedule.remainingHolidaysCount} holiday
+                  {yearSchedule.remainingHolidaysCount === 1 ? '' : 's'} left
+                </span>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-[#F59E0B]/30 bg-[#0B1220] px-3.5 py-2.5">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-[#F59E0B]">
+                Market Holidays ({monthName})
+              </div>
+              <div className="mt-1 text-xs font-semibold text-white">
+                {monthSchedule.holidaysInMonth.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {monthSchedule.holidaysInMonth.map((h) => (
+                      <span
+                        key={h.date}
+                        className="rounded-md border border-[#F59E0B]/40 bg-[#F59E0B]/15 px-2 py-0.5 font-mono text-[11px] text-[#F59E0B]"
+                      >
+                        {h.date.slice(5)}: {h.name}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-[#9BAFC4] font-normal">
+                    No US market holidays in {monthName}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -423,42 +542,66 @@ export const JournalPage: React.FC = () => {
                 today.getFullYear() === currentYear;
 
               const isWeekend = (firstDayOfMonth + i) % 7 === 0 || (firstDayOfMonth + i) % 7 === 6;
+              const holidayName = getMarketHolidayName(currentYear, currentMonth, dayNum);
 
               return (
                 <div
                   key={`day-${dayNum}`}
                   onClick={() => {
+                    if (holidayName) return;
                     setDpDate(formatted);
                     setActiveTab('DAILY_PROFIT');
                   }}
-                  className={`group relative flex flex-col justify-between h-24 p-2.5 rounded-xl border transition cursor-pointer ${
-                    isToday
-                      ? 'border-[#26D6A0] bg-[#26D6A0]/10 shadow-sm'
-                      : hasData
-                        ? totalNet >= 0
-                          ? 'border-[#22C55E]/40 bg-[#22C55E]/10 hover:border-[#22C55E]'
-                          : 'border-[#EF4444]/40 bg-[#EF4444]/10 hover:border-[#EF4444]'
-                        : isWeekend
-                          ? 'border-[#1E2D45]/40 bg-[#0B1220]/50'
-                          : 'border-[#1E2D45] bg-[#0B1220] hover:border-[#26D6A0]/50'
+                  title={holidayName ? `Market Closed: ${holidayName}` : undefined}
+                  className={`group relative flex flex-col justify-between h-24 p-2.5 rounded-xl border transition ${
+                    holidayName
+                      ? 'border-[#F59E0B]/50 bg-[#F59E0B]/10 cursor-not-allowed'
+                      : isToday
+                        ? 'border-[#26D6A0] bg-[#26D6A0]/10 shadow-sm cursor-pointer'
+                        : hasData
+                          ? totalNet >= 0
+                            ? 'border-[#22C55E]/40 bg-[#22C55E]/10 hover:border-[#22C55E] cursor-pointer'
+                            : 'border-[#EF4444]/40 bg-[#EF4444]/10 hover:border-[#EF4444] cursor-pointer'
+                          : isWeekend
+                            ? 'border-[#1E2D45]/40 bg-[#0B1220]/50 cursor-pointer'
+                            : 'border-[#1E2D45] bg-[#0B1220] hover:border-[#26D6A0]/50 cursor-pointer'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-1">
                     <span
                       className={`font-mono text-xs font-bold ${
-                        isToday ? 'text-[#26D6A0]' : 'text-white'
+                        holidayName
+                          ? 'text-[#F59E0B]'
+                          : isToday
+                            ? 'text-[#26D6A0]'
+                            : 'text-white'
                       }`}
                     >
                       {dayNum}
                     </span>
-                    {hasData && (
-                      <span className="font-mono text-[10px] text-[#9BAFC4]">
-                        {count}t
+                    {holidayName ? (
+                      <span className="rounded bg-[#F59E0B]/20 px-1.5 py-0.5 font-mono text-[9px] font-bold text-[#F59E0B]">
+                        CLOSED
                       </span>
+                    ) : (
+                      hasData && (
+                        <span className="font-mono text-[10px] text-[#9BAFC4]">
+                          {count}t
+                        </span>
+                      )
                     )}
                   </div>
 
-                  {hasData ? (
+                  {holidayName ? (
+                    <div className="space-y-0.5 text-left">
+                      <div className="text-[10px] font-extrabold text-[#F59E0B] leading-tight line-clamp-2">
+                        🏛️ {holidayName}
+                      </div>
+                      <div className="text-[9px] text-[#9BAFC4]">
+                        Market Holiday
+                      </div>
+                    </div>
+                  ) : hasData ? (
                     <div className="space-y-0.5 text-left">
                       <div
                         className={`font-mono text-xs sm:text-sm font-extrabold ${
@@ -486,6 +629,263 @@ export const JournalPage: React.FC = () => {
           <div className="flex items-center justify-between text-xs text-[#9BAFC4] pt-2 border-t border-[#1E2D45]">
             <span>💡 Click any calendar cell to edit or log daily results.</span>
             <span>Stop after 8:30 AM PT / 11:30 AM ET • Strict 1-Quantity Rule</span>
+          </div>
+
+          {/* DAILY PROFIT CONSISTENCY & CAPITAL-SAVE MOTIVATION TABLE ($100 / $500 / $1,000 / CUSTOM vs ACTUAL) */}
+          <div className="mt-4 rounded-2xl border border-[#26D6A0]/30 bg-[#0B1220] p-4 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1E2D45] pb-3">
+              <div>
+                <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
+                  <Flame className="h-4 w-4 text-[#F59E0B]" />
+                  <span>
+                    Daily Avg Profit Consistency &amp; Save-Capital Table ($100 / $500 / $1,000 vs. Actual)
+                  </span>
+                </h3>
+                <p className="text-xs text-[#9BAFC4] mt-0.5">
+                  Lock in your daily target and <strong className="text-[#26D6A0]">STOP trading to save capital</strong>. Small consistent daily wins compound massively over open market days.
+                </p>
+              </div>
+
+              {/* Quick Presets + Custom Entered Daily Target */}
+              <div className="flex flex-wrap items-center gap-2">
+                {[100, 500, 1000].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setCustomConsistencyTarget(preset)}
+                    className={`rounded-lg px-2.5 py-1 font-mono text-xs font-bold transition ${
+                      customConsistencyTarget === preset
+                        ? 'bg-[#26D6A0] text-[#0B1220]'
+                        : 'border border-[#1E2D45] bg-[#111C2E] text-[#9BAFC4] hover:text-white'
+                    }`}
+                  >
+                    ${preset}/day
+                  </button>
+                ))}
+                <div className="flex items-center gap-1.5 rounded-lg border border-[#26D6A0]/40 bg-[#111C2E] px-2.5 py-1">
+                  <span className="text-[11px] font-bold text-[#9BAFC4]">Custom $/day:</span>
+                  <input
+                    type="number"
+                    min={10}
+                    step={25}
+                    value={customConsistencyTarget}
+                    onChange={(e) => setCustomConsistencyTarget(Math.max(0, Number(e.target.value) || 0))}
+                    className="w-20 bg-transparent font-mono text-xs font-extrabold text-[#26D6A0] focus:outline-none"
+                    aria-label="Custom daily profit target"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Live Actual Performance Strip */}
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 text-xs">
+              <div className="rounded-xl border border-[#1E2D45] bg-[#111C2E] p-3">
+                <div className="text-[10px] font-bold uppercase text-[#9BAFC4]">
+                  Actual Daily Avg ({monthName})
+                </div>
+                <div
+                  className={`mt-0.5 font-mono text-base font-extrabold ${
+                    actualDailyAvg >= 0 ? 'text-[#22C55E]' : 'text-[#EF4444]'
+                  }`}
+                >
+                  {actualDailyAvg >= 0 ? '+' : ''}${actualDailyAvg.toFixed(0)}/day
+                </div>
+                <div className="text-[10px] text-[#9BAFC4]">
+                  Across {monthLoggedDays} logged day{monthLoggedDays === 1 ? '' : 's'}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-[#1E2D45] bg-[#111C2E] p-3">
+                <div className="text-[10px] font-bold uppercase text-[#9BAFC4]">
+                  Actual {monthName} Net P&amp;L
+                </div>
+                <div
+                  className={`mt-0.5 font-mono text-base font-extrabold ${
+                    monthTotalPnl >= 0 ? 'text-[#22C55E]' : 'text-[#EF4444]'
+                  }`}
+                >
+                  {monthTotalPnl >= 0 ? '+' : ''}${monthTotalPnl.toFixed(0)}
+                </div>
+                <div className="text-[10px] text-[#9BAFC4]">
+                  {monthGreenDays}W / {monthRedDays}L
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-[#1E2D45] bg-[#111C2E] p-3">
+                <div className="text-[10px] font-bold uppercase text-[#9BAFC4]">
+                  Your Entered Goal
+                </div>
+                <div className="mt-0.5 font-mono text-base font-extrabold text-[#26D6A0]">
+                  ${customConsistencyTarget.toLocaleString()}/day
+                </div>
+                <div className="text-[10px] text-[#9BAFC4]">
+                  Stop &amp; Save Capital Trigger
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-[#1E2D45] bg-[#111C2E] p-3">
+                <div className="text-[10px] font-bold uppercase text-[#9BAFC4]">
+                  Actual vs. Entered Gap
+                </div>
+                {(() => {
+                  const diff = actualDailyAvg - customConsistencyTarget;
+                  return (
+                    <>
+                      <div
+                        className={`mt-0.5 font-mono text-base font-extrabold ${
+                          diff >= 0 ? 'text-[#22C55E]' : 'text-[#F59E0B]'
+                        }`}
+                      >
+                        {diff >= 0 ? '+' : '-'}${Math.abs(diff).toFixed(0)}/day
+                      </div>
+                      <div className="text-[10px] text-[#9BAFC4]">
+                        {diff >= 0 ? 'Ahead of daily goal!' : 'To reach entered goal'}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Consistency Comparison Table */}
+            <div className="overflow-x-auto rounded-xl border border-[#1E2D45]">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#111C2E] text-[11px] font-bold uppercase tracking-wider text-[#9BAFC4]">
+                  <tr>
+                    <th className="px-3 py-2.5">Consistency Tier</th>
+                    <th className="px-3 py-2.5 text-right">Daily Avg</th>
+                    <th className="px-3 py-2.5 text-right">Actual vs. Goal</th>
+                    <th className="px-3 py-2.5 text-right">
+                      Rest of {monthName} ({monthSchedule.futureOpenDays}d)
+                    </th>
+                    <th className="px-3 py-2.5 text-right">
+                      Rest of {currentYearNumber} ({yearSchedule.futureOpenDays}d)
+                    </th>
+                    <th className="px-3 py-2.5 text-right">
+                      Full Year ({yearSchedule.totalOpenDaysInYear}d)
+                    </th>
+                    <th className="px-3 py-2.5">Stop &amp; Save Capital Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#1E2D45]/70 bg-[#0B1220]">
+                  {[
+                    {
+                      label: 'Base Hit ($100/day)',
+                      daily: 100,
+                      badge: 'SAFE CAPITAL',
+                      rule: 'Hit +$100 → Shut down & protect',
+                      isActual: false,
+                      isCustom: false,
+                    },
+                    {
+                      label: 'Disciplined Pro ($500/day)',
+                      daily: 500,
+                      badge: '1-CONTRACT',
+                      rule: 'Hit +$500 → Lock gains, zero overtrading',
+                      isActual: false,
+                      isCustom: false,
+                    },
+                    {
+                      label: 'A+ Conviction ($1,000/day)',
+                      daily: 1000,
+                      badge: 'A+ SETUP',
+                      rule: 'Hit +$1,000 → Hard stop, walk away',
+                      isActual: false,
+                      isCustom: false,
+                    },
+                    {
+                      label: `Your Entered ($${customConsistencyTarget.toLocaleString()}/day)`,
+                      daily: customConsistencyTarget,
+                      badge: 'ENTERED',
+                      rule: `Hit +$${customConsistencyTarget.toLocaleString()} → Stop & save capital`,
+                      isActual: false,
+                      isCustom: true,
+                    },
+                    {
+                      label: `Your Actual Avg (${monthName})`,
+                      daily: actualDailyAvg,
+                      badge: 'ACTUAL',
+                      rule:
+                        actualDailyAvg >= customConsistencyTarget
+                          ? 'Beating target! Keep protecting capital'
+                          : 'Stay patient: 1 contract, morning window only',
+                      isActual: true,
+                      isCustom: false,
+                    },
+                  ].map((row) => {
+                    const variance = actualDailyAvg - row.daily;
+                    const restMonth = row.daily * monthSchedule.futureOpenDays;
+                    const restYear = row.daily * yearSchedule.futureOpenDays;
+                    const fullYear = row.daily * yearSchedule.totalOpenDaysInYear;
+                    return (
+                      <tr
+                        key={row.label}
+                        className={
+                          row.isActual
+                            ? 'bg-[#22C55E]/10 font-bold'
+                            : row.isCustom
+                              ? 'bg-[#26D6A0]/10'
+                              : 'hover:bg-[#111C2E]/60'
+                        }
+                      >
+                        <td className="px-3 py-2.5 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-white">{row.label}</span>
+                            <span
+                              className={`rounded px-1.5 py-0.5 font-mono text-[9px] font-extrabold ${
+                                row.isActual
+                                  ? 'bg-[#22C55E]/20 text-[#22C55E]'
+                                  : row.isCustom
+                                    ? 'bg-[#26D6A0]/20 text-[#26D6A0]'
+                                    : 'bg-[#1E2D45] text-[#9BAFC4]'
+                              }`}
+                            >
+                              {row.badge}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-2.5 text-right font-mono font-extrabold text-white">
+                          {row.daily >= 0 ? '' : '-'}${Math.abs(row.daily).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        </td>
+                        <td className="px-3 py-2.5 text-right font-mono font-bold">
+                          {row.isActual ? (
+                            <span className="text-[#9BAFC4]">Baseline</span>
+                          ) : (
+                            <span className={variance >= 0 ? 'text-[#22C55E]' : 'text-[#F59E0B]'}>
+                              {variance >= 0 ? '+' : '-'}${Math.abs(variance).toFixed(0)}/d
+                            </span>
+                          )}
+                        </td>
+                        <td
+                          className={`px-3 py-2.5 text-right font-mono font-bold ${
+                            restMonth >= 0 ? 'text-[#26D6A0]' : 'text-[#EF4444]'
+                          }`}
+                        >
+                          {restMonth >= 0 ? '+' : '-'}${Math.abs(restMonth).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        </td>
+                        <td
+                          className={`px-3 py-2.5 text-right font-mono font-bold ${
+                            restYear >= 0 ? 'text-[#38BDF8]' : 'text-[#EF4444]'
+                          }`}
+                        >
+                          {restYear >= 0 ? '+' : '-'}${Math.abs(restYear).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        </td>
+                        <td
+                          className={`px-3 py-2.5 text-right font-mono font-bold ${
+                            fullYear >= 0 ? 'text-white' : 'text-[#EF4444]'
+                          }`}
+                        >
+                          {fullYear >= 0 ? '+' : '-'}${Math.abs(fullYear).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        </td>
+                        <td className="px-3 py-2.5 text-[11px] text-[#9BAFC4]">
+                          {row.rule}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -637,10 +1037,10 @@ export const JournalPage: React.FC = () => {
               <div className="rounded-xl border border-[#F59E0B]/40 bg-[#0B1220] p-4 space-y-1.5">
                 <div className="flex items-center gap-2 font-extrabold text-[#F59E0B]">
                   <Clock className="h-4 w-4" />
-                  <span>Rule 2: Stop After 8:30 AM PT (11:30 AM ET)</span>
+                  <span>Rule 2: Power Hours Only • Strict Stay Away 9:00–11:00 AM PT</span>
                 </div>
                 <p className="text-[#9BAFC4] leading-relaxed">
-                  The clean morning momentum ends by 8:30 AM PT. Mid-day is institutional premium collection chop. If you are green, lock it. If you need a trade, wait until the <strong>Afternoon Power Hour (12:30 PM PT / 3:30 PM ET)</strong>.
+                  Trade the <strong>First 2-Hr Power Hour (6:30–8:30 AM PT)</strong> and lock gains. <strong className="text-[#EF4444]">Strictly stay away from 9:00 AM – 11:00 AM PT (12:00 PM – 2:00 PM ET)</strong> chop. If you need a late setup, wait for the <strong>Last 1h 10m Power Hour (11:50 AM – 1:00 PM PT)</strong>.
                 </p>
               </div>
             </div>

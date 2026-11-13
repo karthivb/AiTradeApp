@@ -86,10 +86,12 @@ export const TopNav: React.FC = () => {
   const [ptH, ptM] = ptTimeStr.split(':').map(Number);
   const ptMinutes = (ptH || 0) * 60 + (ptM || 0);
 
-  // 6:30 AM PT = 390, 8:30 AM PT = 510, 12:30 PM PT = 750, 1:00 PM PT = 780
-  const isPrimeWindow = ptMinutes >= 390 && ptMinutes < 510;
-  const isChopZone = ptMinutes >= 510 && ptMinutes < 750;
-  const isPowerHour = ptMinutes >= 750 && ptMinutes <= 780;
+  // 6:30 AM – 8:30 AM PT (390-510): First 2 Hr Morning Power Hour
+  // 9:00 AM – 11:00 AM PT (540-660): STRICT STAY AWAY / Chop Zone
+  // 11:50 AM – 1:00 PM PT (710-780): Last 1h 10m Afternoon Power Hour
+  const isMorningPowerHour = ptMinutes >= 390 && ptMinutes < 510;
+  const isStrictStayAway = ptMinutes >= 540 && ptMinutes < 660;
+  const isAfternoonPowerHour = ptMinutes >= 710 && ptMinutes <= 780;
 
   const statusColor: Record<MarketStatus, string> = {
     OPEN: 'bg-[#22C55E]/15 text-[#22C55E] border-[#22C55E]/40',
@@ -103,6 +105,50 @@ export const TopNav: React.FC = () => {
 
   return (
     <>
+      {/* Top Discipline & Power Hour / Strict Stay-Away Banner */}
+      <div
+        className={`flex flex-wrap items-center justify-between gap-2 px-4 py-1.5 text-[11px] font-mono border-b ${
+          isStrictStayAway
+            ? 'bg-[#EF4444]/20 border-[#EF4444]/50 text-[#EF4444]'
+            : isMorningPowerHour || isAfternoonPowerHour
+              ? 'bg-[#22C55E]/15 border-[#22C55E]/40 text-[#22C55E]'
+              : 'bg-[#0B1220] border-[#1E2D45] text-[#9BAFC4]'
+        }`}
+      >
+        <div className="flex flex-wrap items-center gap-2.5">
+          <span
+            className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-extrabold ${
+              isMorningPowerHour
+                ? 'bg-[#22C55E] text-[#0B1220]'
+                : 'bg-[#22C55E]/15 text-[#22C55E] border border-[#22C55E]/40'
+            }`}
+          >
+            ⚡ POWER HOUR (First 2h): 6:30–8:30 AM PT
+          </span>
+          <span
+            className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-extrabold ${
+              isStrictStayAway
+                ? 'bg-[#EF4444] text-white animate-pulse'
+                : 'bg-[#EF4444]/15 text-[#EF4444] border border-[#EF4444]/40'
+            }`}
+          >
+            🚫 STRICT STAY AWAY: 9:00–11:00 AM PT (12:00–2:00 PM ET)
+          </span>
+          <span
+            className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-extrabold ${
+              isAfternoonPowerHour
+                ? 'bg-[#26D6A0] text-[#0B1220]'
+                : 'bg-[#26D6A0]/15 text-[#26D6A0] border border-[#26D6A0]/40'
+            }`}
+          >
+            ⚡ POWER HOUR (Last 1h 10m): 11:50 AM–1:00 PM PT
+          </span>
+        </div>
+        <span className="font-bold text-white">
+          PT Now: {ptTimeStr} {isStrictStayAway ? '• STAY OUT OF CHOP!' : isMorningPowerHour || isAfternoonPowerHour ? '• PRIME POWER WINDOW' : ''}
+        </span>
+      </div>
+
       <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 border-b border-[#1E2D45] bg-[#111C2E] px-4 py-2.5">
         {/* Left: SPX Live Ticker Strip & Quick Stream Controls */}
         <div className="flex flex-wrap items-center gap-2.5">

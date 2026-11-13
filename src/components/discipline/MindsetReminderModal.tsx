@@ -251,7 +251,7 @@ export const MindsetReminderModal: React.FC<MindsetReminderModalProps> = ({
                 />
                 <div>
                   <strong className="text-[#F59E0B]">8:30 AM PT Stop Discipline:</strong>
-                  <span className="text-[#9BAFC4] ml-1.5">Avoiding midday chop between 8:30 AM and 12:30 PM PT.</span>
+                  <span className="text-[#9BAFC4] ml-1.5">Strict Stay Away between 9:00 AM and 11:00 AM PT (12:00 PM – 2:00 PM ET).</span>
                 </div>
               </label>
 

@@ -57,6 +57,7 @@ export const Sidebar: React.FC = () => {
     riskSettings,
     orders,
     dayTraderAlerts,
+    permissionMode,
   } = useTrading();
 
   const [collapsed, setCollapsed] = useState(false);
@@ -172,14 +173,18 @@ export const Sidebar: React.FC = () => {
                 />
                 {riskSettings.killSwitchActive
                   ? 'KILL SWITCH ON'
-                  : 'PAPER MODE SAFE'}
+                  : permissionMode === 'LIVE'
+                    ? 'LIVE MODE'
+                    : 'PAPER MODE'}
               </span>
               <span className="h-2.5 w-2.5 rounded-full bg-[#26D6A0] animate-pulse" />
             </div>
             <p className="mt-1 text-[11px] text-[#9BAFC4]">
               {riskSettings.killSwitchActive
                 ? 'New entries blocked.'
-                : 'All fills routed to Paper Engine.'}
+                : permissionMode === 'LIVE'
+                  ? 'Live execution mode active.'
+                  : 'All fills routed to Paper Engine.'}
             </p>
           </div>
         </div>

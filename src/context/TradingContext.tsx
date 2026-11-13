@@ -217,255 +217,49 @@ interface TradingContextValue {
   setDisplayTimezone: (tz: string) => void;
 }
 
-const STORAGE_KEY = 'tradepilot_command_center_v1';
+const STORAGE_KEY = 'tradepilot_command_center_v2';
 
-const INITIAL_INTRADAY_SERIES = [
-  { time: '09:30', spx: 5968.5, vwap: 5968.5, vix: 15.4 },
-  { time: '09:45', spx: 5972.0, vwap: 5970.2, vix: 15.2 },
-  { time: '10:00', spx: 5969.8, vwap: 5970.0, vix: 15.3 },
-  { time: '10:15', spx: 5975.4, vwap: 5971.8, vix: 15.0 },
-  { time: '10:30', spx: 5979.2, vwap: 5973.5, vix: 14.9 },
-  { time: '10:45', spx: 5977.6, vwap: 5974.4, vix: 15.0 },
-  { time: '11:00', spx: 5981.5, vwap: 5975.9, vix: 14.8 },
-  { time: '11:15', spx: 5984.0, vwap: 5977.1, vix: 14.7 },
-  { time: '11:30', spx: 5982.3, vwap: 5978.0, vix: 14.8 },
-  { time: '11:45', spx: 5985.25, vwap: 5979.1, vix: 14.65 },
-];
+const INITIAL_INTRADAY_SERIES: {
+  time: string;
+  spx: number;
+  vwap: number;
+  vix: number;
+}[] = [];
 
 const INITIAL_ACCOUNTS: PaperAccount[] = [
   {
     id: 'acc-primary-0dte',
     name: 'SPX 0DTE Primary Paper ($25k)',
     initialCapital: 25000,
-    cashBalance: 26840,
-    buyingPower: 25340,
-    realizedPnl: 1840,
-    unrealizedPnl: 215,
+    cashBalance: 25000,
+    buyingPower: 25000,
+    realizedPnl: 0,
+    unrealizedPnl: 0,
     fillModel: 'MIDPOINT',
     commissionPerContract: 0.65,
     slippagePerContract: 0.1,
     isDefault: true,
-    createdAt: '2026-11-01T09:30:00Z',
+    createdAt: new Date().toISOString(),
   },
   {
     id: 'acc-condor-income',
     name: 'SPX Defined-Risk Credit Desk ($50k)',
     initialCapital: 50000,
-    cashBalance: 51420,
-    buyingPower: 48420,
-    realizedPnl: 1420,
+    cashBalance: 50000,
+    buyingPower: 50000,
+    realizedPnl: 0,
     unrealizedPnl: 0,
     fillModel: 'SLIPPAGE_ADJUSTED',
     commissionPerContract: 0.65,
     slippagePerContract: 0.15,
     isDefault: false,
-    createdAt: '2026-11-01T09:30:00Z',
+    createdAt: new Date().toISOString(),
   },
 ];
 
-const INITIAL_JOURNAL: JournalEntry[] = [
-  {
-    id: 'j-demo-1',
-    tradeDate: '2026-11-09',
-    symbol: 'SPX',
-    instrumentType: 'CALL',
-    optionType: 'CALL',
-    strikeSummary: '5975 C (0DTE)',
-    expirationDate: '2026-11-09',
-    contracts: 2,
-    entryPrice: 8.4,
-    exitPrice: 11.3,
-    entryTime: '09:36:12 ET',
-    exitTime: '10:14:40 ET',
-    fees: 2.6,
-    slippage: 20,
-    realizedPnl: 577.4,
-    returnPct: 34.37,
-    strategy: 'ATM Long Call',
-    moneyness: 'ATM',
-    tradingMode: 'PAPER',
-    entryReason: '9:35 AM ET VWAP Breakout + Opening Range High Confirmation',
-    exitReason: '+30% Fixed Profit Target Reached',
-    notes: 'DEMO Trade: Clean morning trend continuation above 5970.',
-    orderIds: ['ORD-9011', 'ORD-9014'],
-    executionIds: ['EXEC-1801', 'EXEC-1809'],
-    legsCount: 1,
-    isVerified: true,
-  },
-  {
-    id: 'j-demo-2',
-    tradeDate: '2026-11-08',
-    symbol: 'SPX',
-    instrumentType: 'MULTI_LEG_OPTION',
-    optionType: 'CALL/PUT',
-    strikeSummary: '5945P / 5960P / 5990C / 6005C',
-    expirationDate: '2026-11-08',
-    contracts: 2,
-    entryPrice: 4.85,
-    exitPrice: 1.95,
-    entryTime: '10:05:00 ET',
-    exitTime: '14:30:00 ET',
-    fees: 10.4,
-    slippage: 40,
-    realizedPnl: 569.6,
-    returnPct: 58.72,
-    strategy: 'Iron Condor',
-    moneyness: 'OTM',
-    tradingMode: 'PAPER',
-    entryReason: 'Balanced opening range + IV Rank > 45%',
-    exitReason: '30-Minute Review Profit Lock (>50% max credit)',
-    notes: 'DEMO Trade: 4-leg Iron Condor grouped as 1 strategy trade.',
-    orderIds: ['ORD-8940', 'ORD-8988'],
-    executionIds: ['EXEC-1720', 'EXEC-1721', 'EXEC-1722', 'EXEC-1723'],
-    legsCount: 4,
-    isVerified: true,
-  },
-  {
-    id: 'j-demo-3',
-    tradeDate: '2026-11-07',
-    symbol: 'SPX',
-    instrumentType: 'MULTI_LEG_OPTION',
-    optionType: 'CALL',
-    strikeSummary: '5960C / 5975C',
-    expirationDate: '2026-11-07',
-    contracts: 3,
-    entryPrice: 6.2,
-    exitPrice: 8.6,
-    entryTime: '09:42:15 ET',
-    exitTime: '11:12:05 ET',
-    fees: 7.8,
-    slippage: 30,
-    realizedPnl: 712.2,
-    returnPct: 38.29,
-    strategy: 'Bull Call Debit Spread',
-    moneyness: 'ATM',
-    tradingMode: 'PAPER',
-    entryReason: 'EMA 9/21 Bullish Crossover',
-    exitReason: '+30% Profit Target Rule',
-    notes: 'DEMO Trade: Defined-risk vertical spread mitigated mid-morning theta.',
-    orderIds: ['ORD-8821', 'ORD-8850'],
-    executionIds: ['EXEC-1640', 'EXEC-1641'],
-    legsCount: 2,
-    isVerified: true,
-  },
-  {
-    id: 'j-demo-4',
-    tradeDate: '2026-11-06',
-    symbol: 'SPX',
-    instrumentType: 'PUT',
-    optionType: 'PUT',
-    strikeSummary: '5950 P (0DTE)',
-    expirationDate: '2026-11-06',
-    contracts: 2,
-    entryPrice: 7.5,
-    exitPrice: 5.95,
-    entryTime: '10:20:00 ET',
-    exitTime: '10:50:00 ET',
-    fees: 2.6,
-    slippage: 20,
-    realizedPnl: -312.6,
-    returnPct: -20.84,
-    strategy: 'ATM Long Put',
-    moneyness: 'ATM',
-    tradingMode: 'PAPER',
-    entryReason: 'TradingView Webhook: VWAP_BEARISH',
-    exitReason: '-20% Fixed Stop Loss Triggered',
-    notes: 'DEMO Trade: False breakdown below VWAP; stop loss respected.',
-    orderIds: ['ORD-8710', 'ORD-8722'],
-    executionIds: ['EXEC-1510', 'EXEC-1518'],
-    legsCount: 1,
-    isVerified: true,
-  },
-  {
-    id: 'j-demo-5',
-    tradeDate: '2026-11-05',
-    symbol: 'SPX',
-    instrumentType: 'MULTI_LEG_OPTION',
-    optionType: 'PUT',
-    strikeSummary: '5935P / 5920P',
-    expirationDate: '2026-11-05',
-    contracts: 2,
-    entryPrice: 3.1,
-    exitPrice: 1.45,
-    entryTime: '09:50:00 ET',
-    exitTime: '15:45:00 ET',
-    fees: 5.2,
-    slippage: 20,
-    realizedPnl: 324.8,
-    returnPct: 52.38,
-    strategy: 'Bull Put Credit Spread',
-    moneyness: 'OTM',
-    tradingMode: 'PAPER',
-    entryReason: 'Support hold at Opening Range Low',
-    exitReason: '3:45 PM ET Force-Close Cutoff',
-    notes: 'DEMO Trade: Closed at 3:45 PM ET cutoff to avoid pin risk.',
-    orderIds: ['ORD-8601', 'ORD-8690'],
-    executionIds: ['EXEC-1402', 'EXEC-1403'],
-    legsCount: 2,
-    isVerified: true,
-  },
-];
+const INITIAL_JOURNAL: JournalEntry[] = [];
 
-const INITIAL_POSITIONS: PaperPosition[] = [
-  {
-    id: 'pos-demo-open-1',
-    accountId: 'acc-primary-0dte',
-    strategyCode: 'BULL_CALL_DEBIT_SPREAD',
-    strategyName: 'Bull Call Debit Spread',
-    underlyingSymbol: 'SPX',
-    isCredit: false,
-    quantity: 2,
-    legs: [
-      {
-        occSymbol: 'SPXW261110C05985000',
-        optionType: 'CALL',
-        strike: 5985,
-        expirationDate: '2026-11-10',
-        side: 'BUY_TO_OPEN',
-        ratio: 1,
-        entryPrice: 11.2,
-        currentMark: 12.65,
-        delta: 0.51,
-        gamma: 0.018,
-        theta: -4.2,
-        vega: 1.85,
-      },
-      {
-        occSymbol: 'SPXW261110C06000000',
-        optionType: 'CALL',
-        strike: 6000,
-        expirationDate: '2026-11-10',
-        side: 'SELL_TO_OPEN',
-        ratio: 1,
-        entryPrice: 4.8,
-        currentMark: 5.15,
-        delta: 0.28,
-        gamma: 0.014,
-        theta: -3.1,
-        vega: 1.35,
-      },
-    ],
-    avgEntryPremium: 6.4,
-    currentMark: 7.5,
-    totalEntryCostUsd: 1282.6,
-    maxRiskUsd: 1282.6,
-    maxRewardUsd: 1717.4,
-    unrealizedPnl: 217.4,
-    unrealizedPnlPct: 16.95,
-    feesPaid: 2.6,
-    slippageIncurred: 20,
-    profitTargetPct: 30,
-    stopLossPct: 20,
-    trailingStopPct: 12,
-    highWaterMarkPnlPct: 18.2,
-    monitoringIntervalMin: 30,
-    monitoringAction: 'REVIEW',
-    forceCloseTimeEt: '15:45',
-    entryReason: '9:35 AM ET Opening Range Breakout + VWAP Support',
-    openedAt: '2026-11-10T14:35:00Z',
-    lastReviewedAt: '2026-11-10T15:05:00Z',
-  },
-];
+const INITIAL_POSITIONS: PaperPosition[] = [];
 
 const TradingContext = createContext<TradingContextValue | undefined>(undefined);
 
@@ -643,60 +437,8 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({
   );
   const [positions, setPositions] =
     useState<PaperPosition[]>(INITIAL_POSITIONS);
-  const [orders, setOrders] = useState<PaperOrder[]>([
-    {
-      id: 'ORD-9025',
-      accountId: 'acc-primary-0dte',
-      strategyCode: 'BULL_CALL_DEBIT_SPREAD',
-      strategyName: 'Bull Call Debit Spread',
-      orderType: 'MARKET',
-      action: 'OPEN',
-      status: 'FILLED',
-      isCredit: false,
-      requestedQty: 2,
-      filledQty: 2,
-      naturalMidpoint: 6.4,
-      filledAvgPrice: 6.4,
-      fillModelUsed: 'MIDPOINT',
-      fees: 2.6,
-      slippage: 20,
-      legsSummary: 'BUY 2x 5985C @ 11.20 / SELL 2x 6000C @ 4.80',
-      legs: INITIAL_POSITIONS[0].legs,
-      isSimulated: true,
-      submittedAt: '2026-11-10T14:35:00Z',
-      executedAt: '2026-11-10T14:35:01Z',
-    },
-  ]);
-  const [executions, setExecutions] = useState<PaperExecution[]>([
-    {
-      id: 'EXEC-1901',
-      orderId: 'ORD-9025',
-      accountId: 'acc-primary-0dte',
-      occSymbol: 'SPXW261110C05985000',
-      side: 'BUY_TO_OPEN',
-      fillQty: 2,
-      fillPrice: 11.2,
-      fee: 1.3,
-      slippage: 10,
-      fillModel: 'MIDPOINT',
-      isSimulated: true,
-      executedAt: '2026-11-10T14:35:01Z',
-    },
-    {
-      id: 'EXEC-1902',
-      orderId: 'ORD-9025',
-      accountId: 'acc-primary-0dte',
-      occSymbol: 'SPXW261110C06000000',
-      side: 'SELL_TO_OPEN',
-      fillQty: 2,
-      fillPrice: 4.8,
-      fee: 1.3,
-      slippage: 10,
-      fillModel: 'MIDPOINT',
-      isSimulated: true,
-      executedAt: '2026-11-10T14:35:01Z',
-    },
-  ]);
+  const [orders, setOrders] = useState<PaperOrder[]>([]);
+  const [executions, setExecutions] = useState<PaperExecution[]>([]);
 
   // Entry, Exit, Risk Rules & Automation Events
   const [entryConfig, setEntryConfig] = useState<EntryRuleConfig>({
@@ -749,97 +491,17 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const [automationEvents, setAutomationEvents] = useState<
     AutomationEventRecord[]
-  >([
-    {
-      id: 'auto-init-1',
-      idempotencyKey: 'idem_lock:entry:09:35',
-      executionLockKey: 'lock:entry:MARKET_AFTER_TIME:2026-11-10T09:35',
-      eventType: 'ENTRY_EVALUATION',
-      strategyName: 'Bull Call Debit Spread',
-      actionTaken: 'ENTRY_SIGNAL_READY',
-      reason: '09:35 AM ET Opening Range & VWAP confirmation evaluated.',
-      occurredAt: '2026-11-10T14:35:00Z',
-    },
-  ]);
-  const [activeLocks, setActiveLocks] = useState<string[]>([
-    'lock:entry:MARKET_AFTER_TIME:2026-11-10T09:35',
-  ]);
+  >([]);
+  const [activeLocks, setActiveLocks] = useState<string[]>([]);
 
-  const [signals, setSignals] = useState<TradingSignal[]>([
-    {
-      id: 'sig-1',
-      idempotencyKey: 'VWAP_BULLISH_SPX_1731249300',
-      source: 'TRADINGVIEW',
-      signalType: 'VWAP_BULLISH',
-      symbol: 'SPX',
-      mappedStrategyCode: 'BULL_CALL_DEBIT_SPREAD',
-      tradingMode: 'PAPER',
-      validationStatus: 'EXECUTED_PAPER',
-      receivedAt: '09:35:00 ET',
-      payloadSummary:
-        '{"signal_type":"VWAP_BULLISH","symbol":"SPX","price":5972.10,"mode":"PAPER"}',
-    },
-    {
-      id: 'sig-2',
-      idempotencyKey: 'BUY_STRADDLE_SPX_1731252000',
-      source: 'TRADINGVIEW',
-      signalType: 'BUY_STRADDLE',
-      symbol: 'SPX',
-      mappedStrategyCode: 'ATM_LONG_STRADDLE',
-      tradingMode: 'PAPER',
-      validationStatus: 'VALIDATED',
-      receivedAt: '10:20:00 ET',
-      payloadSummary:
-        '{"signal_type":"BUY_STRADDLE","symbol":"SPX","price":5978.40,"mode":"PAPER"}',
-    },
-  ]);
+  const [signals, setSignals] = useState<TradingSignal[]>([]);
 
   const [journalEntries, setJournalEntries] =
     useState<JournalEntry[]>(INITIAL_JOURNAL);
 
-  const [notifications, setNotifications] = useState<NotificationItem[]>([
-    {
-      id: 'notif-1',
-      type: 'PAPER_TRADE_OPENED',
-      severity: 'SUCCESS',
-      title: 'Paper Position Opened (SIMULATED)',
-      message:
-        'Filled 2x SPX 0DTE Bull Call Debit Spread (5985C/6000C) @ $6.40 Midpoint.',
-      timestamp: '09:35:01 ET',
-      read: false,
-    },
-    {
-      id: 'notif-2',
-      type: 'ENTRY_SIGNAL',
-      severity: 'INFO',
-      title: '30-Minute Position Review Scheduled',
-      message:
-        'Next automated evaluation for SPX 5985C/6000C set for 30-min interval (Action: REVIEW).',
-      timestamp: '10:05:00 ET',
-      read: false,
-    },
-  ]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
-  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([
-    {
-      id: 'audit-1',
-      category: 'ORDER',
-      severity: 'INFO',
-      action: 'PAPER_ORDER_FILLED',
-      details:
-        'Order ORD-9025 filled 2x Bull Call Debit Spread @ $6.40 via MIDPOINT model.',
-      timestamp: new Date().toISOString(),
-    },
-    {
-      id: 'audit-2',
-      category: 'BROKER_MCP',
-      severity: 'WARN',
-      action: 'MCP_CAPABILITY_CHECK',
-      details:
-        'Robinhood MCP Server not connected. Operating in Paper Trading & Read-Only safe mode.',
-      timestamp: new Date().toISOString(),
-    },
-  ]);
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
 
   const [permissionMode, setPermissionMode] =
     useState<TradingPermissionMode>('PAPER');
@@ -849,46 +511,7 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({
   // Daily Profit & Manual Adjustment Records
   const [dailyProfitRecords, setDailyProfitRecords] = useState<
     DailyProfitRecord[]
-  >([
-    {
-      id: 'dp-today',
-      tradeDate: new Date().toISOString().slice(0, 10),
-      manualProfitUsd: 340,
-      accountAdjustmentUsd: 0,
-      brokerSource: 'COMBINED',
-      tradesCount: 3,
-      dominantMood: 'CALM_DISCIPLINED',
-      followedPlan: true,
-      notes:
-        'Took 2 clean base-hit SPX 0DTE spreads and stepped away before 11:30 AM chop. Remembered family & tomorrow.',
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: 'dp-prev-1',
-      tradeDate: '2026-11-09',
-      manualProfitUsd: 577,
-      accountAdjustmentUsd: 0,
-      brokerSource: 'ROBINHOOD_LIVE',
-      tradesCount: 2,
-      dominantMood: 'PROFIT_CONFIDENT',
-      followedPlan: true,
-      notes:
-        'Locked +30% target on ATM Call & Bull Call Spread. Resisted taking a 3rd over-confident trade.',
-      updatedAt: '2026-11-09T16:10:00Z',
-    },
-    {
-      id: 'dp-prev-2',
-      tradeDate: '2026-11-08',
-      manualProfitUsd: 570,
-      accountAdjustmentUsd: 0,
-      brokerSource: 'COMBINED',
-      tradesCount: 2,
-      dominantMood: 'CALM_DISCIPLINED',
-      followedPlan: true,
-      notes: 'Iron Condor theta harvest inside range. Zero averaging down.',
-      updatedAt: '2026-11-08T16:05:00Z',
-    },
-  ]);
+  >([]);
 
   // Discipline & 10-Minute Check-In State
   const [dailyAllowanceUsd, setDailyAllowanceUsd] = useState<number>(500);
@@ -898,83 +521,12 @@ export const TradingProvider: React.FC<{ children: React.ReactNode }> = ({
   const [checkInTimerActive, setCheckInTimerActive] = useState<boolean>(true);
   const [checkInAlertDue, setCheckInAlertDue] = useState<boolean>(false);
 
-  const [disciplineLogs, setDisciplineLogs] = useState<DisciplineCheckInLog[]>([
-    {
-      id: 'disc-1',
-      timestamp: '09:40:00 AM',
-      tradeDate: new Date().toISOString().slice(0, 10),
-      brainFog: 'CLEAR',
-      mood: 'CALM_DISCIPLINED',
-      secondaryMoods: [],
-      urgeIntensity: 2,
-      remainingDailyBudgetUsd: 500,
-      actionTaken: 'Followed Plan — Waited for 9:35 AM ORB confirmation',
-      familyReminderChecked: true,
-      notes:
-        'Mind is clear. Reminded myself: I do not need to clear all debt in one trade. Base hits only.',
-    },
-    {
-      id: 'disc-2',
-      timestamp: '09:50:00 AM',
-      tradeDate: new Date().toISOString().slice(0, 10),
-      brainFog: 'CLEAR',
-      mood: 'PROFIT_CONFIDENT',
-      secondaryMoods: ['OVER_TRADE'],
-      urgeIntensity: 5,
-      remainingDailyBudgetUsd: 500,
-      actionTaken: 'Sized down to 1 contract — avoided over-trading after win',
-      familyReminderChecked: true,
-      notes:
-        'Up +$340 early. Felt urge to double size, checked family reminder and stayed small.',
-    },
-  ]);
+  const [disciplineLogs, setDisciplineLogs] = useState<DisciplineCheckInLog[]>([]);
 
   // GitHub Day Trader Skill Alerts State (Jakeschincariol/day-trader-skill)
   // Tracks created alerts and automatically purges alerts when their retention window passes (configurable > 2 days)
-  const [totalAlertsCreatedCount, setTotalAlertsCreatedCount] = useState<number>(3);
-  const [dayTraderAlerts, setDayTraderAlerts] = useState<DayTraderSkillAlert[]>([
-    {
-      id: 'alert-initial-1',
-      symbol: 'SPX',
-      alertType: 'STOP_LOSS',
-      targetPrice: 5960,
-      triggerCondition: 'SPX <= $5960.00 (-20% Trade Stop)',
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(),
-      retentionDays: 7,
-      status: 'ACTIVE',
-      currentPriceAtCreation: 5978.4,
-      sourceSkill: 'trader-alerts (Jakeschincariol/day-trader-skill)',
-      notes: 'Initial stop-loss alert for active 0DTE bull call spread',
-    },
-    {
-      id: 'alert-initial-2',
-      symbol: 'SPX',
-      alertType: 'PROFIT_TARGET',
-      targetPrice: 6010,
-      triggerCondition: 'SPX >= $6010.00 (+30% Profit Target)',
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(),
-      retentionDays: 7,
-      status: 'ACTIVE',
-      currentPriceAtCreation: 5978.4,
-      sourceSkill: 'trader-alerts (Jakeschincariol/day-trader-skill)',
-      notes: 'Initial profit target harvest alert at $6010 strike',
-    },
-    {
-      id: 'alert-initial-3',
-      symbol: 'SPX',
-      alertType: 'FLAT_BY_CLOSE',
-      triggerCondition: '3:55 PM ET Mandatory Flatten Alert',
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(),
-      retentionDays: 7,
-      status: 'ACTIVE',
-      currentPriceAtCreation: 5978.4,
-      sourceSkill: 'trader-alerts (Jakeschincariol/day-trader-skill)',
-      notes: 'Closing warning: Close all 0DTE positions before 4:00 PM bell to avoid settlement assignment',
-    },
-  ]);
+  const [totalAlertsCreatedCount, setTotalAlertsCreatedCount] = useState<number>(0);
+  const [dayTraderAlerts, setDayTraderAlerts] = useState<DayTraderSkillAlert[]>([]);
 
   // Helper to determine if currently inside US Regular Market Open Hours (9:30 AM - 4:00 PM ET / 6:30 AM - 1:00 PM PT, Mon-Fri)
   const isRegularMarketOpen = (): boolean => {

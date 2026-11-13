@@ -632,7 +632,7 @@ python scripts/robinhood_mcp_server.py
                   </label>
                   <div className="flex items-center gap-2 text-[#22C55E] font-bold">
                     <CheckCircle2 className="h-4 w-4" />
-                    <span>ACTIVE: No automated entries between 8:30 AM & 12:30 PM PT</span>
+                    <span>ACTIVE: Strict Stay Away between 9:00 AM &amp; 11:00 AM PT</span>
                   </div>
                   <span className="text-[10px] text-[#9BAFC4] mt-1 block">
                     Prevents automated churn during lunch hour chop.
